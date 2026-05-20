@@ -404,44 +404,44 @@ Rules:
 
 def call_module3(material, region, api_key):
     client = anthropic.Anthropic(api_key=api_key)
-    prompt = f"""You are a senior procurement supply risk analyst. Today is {TODAY_STR}.
+    today = datetime.today().strftime("%d %B %Y")
+    prompt = f"""You are a senior procurement supply risk analyst. Today is {today}.
 
-The user wants a Shortage Tracker analysis for: "{material}" in {region}.
+Provide a Shortage Tracker analysis for: "{material}" in {region}.
 
-Use web search extensively to find the most current available data: production issues, trade flows, import dependence, logistics constraints, geopolitical exposure, sanctions, energy input risks, weather impacts, policy changes, and relevant market developments.
+Use web search to find the most current data on production issues, trade flows, import dependence, logistics constraints, geopolitical exposure, energy input risks, weather, policy changes, and market developments.
 
-Return ONLY a valid JSON object, no markdown:
+Return ONLY a raw JSON object. No markdown. No preamble. Plain ASCII only. Straight double quotes. Hyphens not em-dashes.
+
 {{
   "current_supply_risk": 45,
   "forecasted_supply_risk": 70,
   "variables": [
     {{
-      "title": "Short descriptive title for this variable (e.g. 'Energy input cost pressure persists')",
-      "body": "3-5 sentences of detailed factual analysis. Include specific figures, dates, and sources where available. Use the same depth and style as a professional procurement intelligence briefing."
+      "title": "Short descriptive title",
+      "body": "3-5 factual sentences with specific figures, dates and sources. Plain ASCII only."
     }}
   ],
-  "forecast_6m": "One detailed paragraph (3-4 sentences) on the 6-month availability outlook from {TODAY_STR}. Be specific about the key events and timing.",
-  "forecast_12m_best": "One specific sentence describing the best-case 12-month scenario with the conditions required.",
-  "forecast_12m_base": "One specific sentence describing the base-case 12-month scenario.",
-  "forecast_12m_worst": "One specific sentence describing the worst-case 12-month scenario.",
+  "forecast_6m": "3-4 sentences on 6-month availability outlook from {today}. Plain ASCII.",
+  "forecast_12m_best": "One sentence best-case scenario.",
+  "forecast_12m_base": "One sentence base-case scenario.",
+  "forecast_12m_worst": "One sentence worst-case scenario.",
   "additional_comments": [
     {{
-      "title": "Short title for the watchpoint",
-      "body": "2-4 sentences of insight not repeated from variables above. Focus on L3 downstream impacts, buyer watchpoints, concentration risks, or upcoming review triggers.",
-      "references": ["url1", "url2"]
+      "title": "Short watchpoint title",
+      "body": "2-4 sentences of insight on L3 downstream impacts or buyer watchpoints. Plain ASCII.",
+      "references": ["https://example.com/source1"]
     }}
   ],
-  "all_references": ["url1", "url2", "url3"]
+  "all_references": ["https://example.com/ref1", "https://example.com/ref2"]
 }}
 
 Rules:
 - current_supply_risk and forecasted_supply_risk must be ONLY one of: 15, 45, 70, 98.
-- 15=least risk, 98=highest risk.
 - Provide 4 to 6 variable bullets and 3 to 4 additional comment bullets.
-- References must be real URLs from official bodies, industry associations, exchanges, or credible trade publications.
+- References must be real URLs from official bodies, industry associations, or credible trade publications.
 - Focus entirely on {region} supply context.
-- Do not invent data. Where uncertain, qualify with 'reported' or 'estimated'.
-- The JSON must be valid and parseable."""
+- CRITICAL: Output must be valid parseable JSON. No Unicode special chars. No smart quotes. No em-dashes. No backslashes inside strings."""
 
     response = client.messages.create(
         model="claude-opus-4-5",
@@ -450,10 +450,6 @@ Rules:
         messages=[{"role": "user", "content": prompt}],
     )
     return parse_json(extract_text(response))
-
-
-# ── Display functions ──────────────────────────────────────────────────────────
-
 def display_module1(d, material, region):
     f = d.get("freshness", {})
     scope = d.get("scope_note", "")
@@ -698,7 +694,7 @@ st.markdown(
     f'<div class="topbar">'
     f'<div><div class="brand-name">⬡ CommodityPulse</div>'
     f'<div class="brand-sub">PROCUREMENT INTELLIGENCE PLATFORM</div></div>'
-    f'<div class="date-pill">ANALYSIS DATE: {TODAY_STR.upper()}</div>'
+    f'<div class="date-pill">ANALYSIS DATE: {datetime.today().strftime("%d %b %Y").upper()}</div>'
     f'</div>',
     unsafe_allow_html=True,
 )
