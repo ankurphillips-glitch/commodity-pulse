@@ -247,10 +247,30 @@ def parse_json(text):
     text = text.strip()
     text = re.sub(r"^```(?:json)?\s*", "", text)
     text = re.sub(r"\s*```$", "", text.strip())
+    # Strip control characters that break JSON (keep tab/newline/CR)
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
+    # Normalise smart quotes to ASCII
+    text = text.replace('\u2018', "'").replace('\u2019', "'")
+    text = text.replace('\u201c', '"').replace('\u201d', '"')
     m = re.search(r'\{[\s\S]*\}', text)
-    if m:
-        return json.loads(m.group())
-    return json.loads(text)
+    raw = m.group() if m else text
+    # Attempt 1: direct parse
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+    # Attempt 2: fix stray backslashes
+    try:
+        cleaned = re.sub(r'(?<!\\)\\(?!["\\\\/bfnrtu])', r'\\\\', raw)
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+    # Attempt 3: remove all non-printable characters
+    try:
+        cleaned = re.sub(r'[^\x09\x0a\x0d\x20-\x7e\x80-\xff]', '', raw)
+        return json.loads(cleaned)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Could not parse JSON after multiple attempts: {e}")
 
 
 def month_labels(n):
@@ -369,7 +389,9 @@ Rules:
 - weighted_total_pct = sum of (projected_change_pct * weight_pct / 100) across all cost heads for that month.
 - Be specific. Use actual futures levels, analyst consensus ranges, or clearly labelled estimates.
 - Focus entirely on {region} context.
-- The JSON must be valid and parseable."""
+- The JSON must be valid and parseable.
+- Use only standard ASCII double quotes for JSON strings. Do not use curly quotes, smart quotes, or any special punctuation characters.
+- Do not include any special Unicode characters, em-dashes, or non-ASCII characters inside JSON string values. Use plain hyphens instead of em-dashes."""
 
     response = client.messages.create(
         model="claude-opus-4-5",
