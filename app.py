@@ -1,60 +1,176 @@
 import streamlit as st
 import anthropic
 import pandas as pd
+import plotly.graph_objects as go
 from datetime import datetime, date
 
-# ── Page configuration ────────────────────────────────────────────────────────
+# ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="CommodityPulse – Procurement Intelligence",
     page_icon="⬡",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-MAX_QUERIES = 2
+# ── 349 L3 Categories ─────────────────────────────────────────────────────────
+CATEGORIES = [
+    "CARPENTER (BUILDING MATERIALS)","CEILING (BUILDING MATERIALS)","COOLING (BUILDING MATERIALS)",
+    "DOORS (BUILDING MATERIALS)","ELECTRICITY HV (BUILDING MATERIALS)","ELECTRICITY LV (BUILDING MATERIALS)",
+    "ELEVATORS (BUILDING MATERIALS)","EMERGENCY GENERATORS & UPS (NO-BREAK) (BUILDING MATERIALS)",
+    "FLOOR LAYER (BUILDING MATERIALS)","HVAC (BUILDING MATERIALS)","LIGHTING INDOOR (BUILDING MATERIALS)",
+    "LIGHTING OUTDOOR (BUILDING MATERIALS)","OTHER (BUILDING MATERIALS)","PAINTER (BUILDING MATERIALS)",
+    "PLUMBER/SEWER (BUILDING MATERIALS)","ADVISORY SERVICES","ARCHITECT","CARCASE WORKS",
+    "CARPENTER (CONTRACTORS)","CEILING (CONTRACTORS)","COOLING (CONTRACTORS)","COORDINATION",
+    "DATA CABLES","DEMOLITION","DOORS (CONTRACTORS)","ELECTRICITY HV (CONTRACTORS)",
+    "ELECTRICITY LV (CONTRACTORS)","ELEVATORS (CONTRACTORS)",
+    "EMERGENCY GENERATORS & UPS (NO-BREAK) (CONTRACTORS)","ENGINEERING",
+    "FIRE SAFETY (CONTRACTORS)","FLOOR LAYER (CONTRACTORS)","GENERAL CONTRACTORS",
+    "HVAC (CONTRACTORS)","INFRASTRUCTURE OUTSOURCING SERVICES (CONTRACTORS)","OTHER (CONTRACTORS)",
+    "PAINTER (CONTRACTORS)","PLUMBER/SEWER (CONTRACTORS)","ROOF WORK","SECURITY SYSTEM",
+    "SHELVING (CONTRACTORS)","SIGNING (CONTRACTORS)",
+    "BUILDINGS / COLD SHELL (EXTERIOR REAL ESTATE)","BUILDINGS / HOT SHELL (INTERIOR FORMAT BASED)",
+    "COOLING (MAINTENANCE)","ELECTRICITY HV (MAINTENANCE)","ELECTRICITY LV (MAINTENANCE)",
+    "ELEVATORS (MAINTENANCE)","EMERGENCY GENERATORS & UPS (NO-BREAK) (MAINTENANCE)",
+    "FIRE SAFETY (MAINTENANCE)","GROUNDS / SURROUNDINGS (F.E. PARKING FACILITIES)",
+    "HVAC (MAINTENANCE)","LIGHTING INDOOR (MAINTENANCE)","LIGHTING OUTDOOR (MAINTENANCE)",
+    "OTHER (MAINTENANCE)","PLUMBER/SEWER (MAINTENANCE)","WATER TREATMENT / SANITARY",
+    "SITE LEASE FOR STORES & PARKING","SITE PURCHASES AND SALES FOR STORES & PARKING",
+    "CREATIVE/DIGITAL CONSULTANCY","IT CONSULTANCY","LEGAL CONSULTANCY","MANAGEMENT CONSULTANCY",
+    "MEMBERSHIPS & SPONSORING (NON MARKETING)","QUALITY TESTING/CERTIFICATION",
+    "STRATEGY CONSULTANCY","SUPPLY CHAIN CONSULTANCY","TAX CONSULTANCY",
+    "OTHER (EXTERNAL HIRING)","TEMP LABOR FOR STORES","TEMP LABOR FOR WAREHOUSES",
+    "FINANCE & ACCOUNTING SERVICES","FINANCIAL AUDIT SERVICES","GENERAL BANKING SERVICES",
+    "INSURANCES","LEASING (EMPLOYEE CARS/VANS)","MONEY HANDLING AND TRANSPORT",
+    "PAYMENT TRANSACTION FEES","ADMINISTRATIVE PAYROLL","EMPLOYEE BENEFITS","HEALTH SERVICES",
+    "LEARNING & DEVELOPMENT","OTHER MOBILITY SOLUTIONS","OUTPLACEMENT","RECRUITMENT SERVICES",
+    "AIRLINE TICKETS","BOOKING AGENCIES AND TOOLS","EVENTS (TRAVEL & EVENTS)",
+    "EXTERNAL LOCATIONS","HOTEL (NIGHTS)","OTHER TRANSPORT (NON COMMUTING)",
+    "CABINETS PLUG-IN (COOLING)","CABINETS REMOTE (COOLING)","OTHER (COOLING)",
+    "FURNITURE MIXED MATERIALS","FURNITURE/FIXTURES BACK OFFICE, HQ, CANTEEN (FURNITURE)",
+    "FURNITURE/FIXTURES STORE CASH WRAPS/CHECKOUTS (FURNITURE)",
+    "FURNITURE/FIXTURES STORE INOX/STEEL (FURNITURE)","FURNITURE/FIXTURES STORE PLASTIC",
+    "FURNITURE/FIXTURES STORE WOOD (FURNITURE)","OTHER (FURNITURE)","SHELVING (FURNITURE)",
+    "(SHELL)FISH PROCESSING MACHINES (MACHINERY)","AUDIO/SOUND EQUIPMENT (MACHINERY)",
+    "BREAD PROCESSING MACHINES (MACHINERY)","CHEESE PROCESSING MACHINES (MACHINERY)",
+    "CLEANING MACHINES/CLEANING DISPENSER (MACHINERY)","COFFEE MACHINES (MACHINERY)",
+    "DELI EQUIPMENT & UTENSILS (MACHINERY)","FRUIT & VEG PROCESSING MACHINES (MACHINERY)",
+    "GRILLS (MACHINERY)","MEAT PROCESSING MACHINES (MACHINERY)","OTHER (MACHINERY)",
+    "OVENS (MACHINERY)","PACKING MACHINE (MACHINERY)","PAPER PROCESSING MACHINES (MACHINERY)",
+    "REVERSE VENDING MACHINES (MACHINERY)","VENDING MACHINES (MACHINERY)",
+    "WEIGHING EQUIPMENT (MACHINERY)","CABINETS PLUG-IN (MAINTENANCE COOLING)",
+    "CABINETS REMOTE (MAINTENANCE COOLING)","OTHER (MAINTENANCE COOLING)",
+    "FURNITURE/FIXTURES BACK OFFICE, HQ, CANTEEN (MAINTENANCE FURNITURE)",
+    "FURNITURE/FIXTURES STORE CASH WRAPS/CHECKOUTS (MAINTENANCE FURNITURE)",
+    "FURNITURE/FIXTURES STORE INOX/STEEL (MAINTENANCE FURNITURE)",
+    "FURNITURE/FIXTURES STORE PLASTIC (MAINTENANCE FURNITURE)",
+    "FURNITURE/FIXTURES STORE WOOD (MAINTENANCE FURNITURE)","OTHER (MAINTENANCE FURNITURE)",
+    "SHELVING (MAINTENANCE FURNITURE)","(SHELL)FISH PROCESSING MACHINES (MAINTENANCE MACHINERY)",
+    "AUDIO/SOUND EQUIPMENT (MAINTENANCE MACHINERY)","BREAD PROCESSING MACHINES (MAINTENANCE MACHINERY)",
+    "CHEESE PROCESSING MACHINES (MAINTENANCE MACHINERY)",
+    "CLEANING MACHINES/CLEANING DISPENSER (MAINTENANCE MACHINERY)",
+    "COFFEE MACHINES (MAINTENANCE MACHINERY)","DELI EQUIPMENT & UTENSILS (MAINTENANCE MACHINERY)",
+    "FRUIT & VEG PROCESSING MACHINES (MAINTENANCE MACHINERY)","GRILLS (MAINTENANCE MACHINERY)",
+    "MEAT PROCESSING MACHINES (MAINTENANCE MACHINERY)","OTHER (MAINTENANCE MACHINERY)",
+    "OVENS (MAINTENANCE MACHINERY)","PACKING MACHINE (MAINTENANCE MACHINERY)",
+    "PAPER PROCESSING MACHINES (MAINTENANCE MACHINERY)",
+    "REVERSE VENDING MACHINES (MAINTENANCE MACHINERY)","VENDING MACHINES (MAINTENANCE MACHINERY)",
+    "WEIGHING EQUIPMENT (MAINTENANCE MACHINERY)","OTHER (MAINTENANCE MERCHANDISING)",
+    "SHELVING ACCESSORIES (MAINTENANCE MERCHANDISING)","SHOPPING BASKETS (MAINTENANCE MERCHANDISING)",
+    "SHOPPING CARTS/TROLLEYS (MAINTENANCE MERCHANDISING)","SIGNING (MAINTENANCE MERCHANDISING)",
+    "ENTRANCE BARRIERS & MECHANICS/SWING GATES (MAINTENANCE SECURITY)",
+    "FIRE SAFETY (MAINTENANCE SECURITY)","OTHER (MAINTENANCE SECURITY)",
+    "SAFE/MONEY HANDLING (MAINTENANCE SECURITY)","SECURITY SYSTEMS (MAINTENANCE SECURITY)",
+    "TELETUBE CHECK OUT AIRBOXSYSTEM (MAINTENANCE SECURITY)","OTHER (MERCHANDISING)",
+    "SHELVING ACCESSORIES (MERCHANDISING)","SHOPPING BASKETS (MERCHANDISING)",
+    "SHOPPING CARTS/TROLLEYS (MERCHANDISING)","SIGNING (MERCHANDISING)",
+    "ENTRANCE BARRIERS & MECHANICS/SWING GATES (SECURITY)","FIRE SAFETY (SECURITY)",
+    "OTHER (SECURITY)","SAFE/MONEY HANDLING (SECURITY)","SECURITY SYSTEMS (SECURITY)",
+    "TELETUBE CHECK OUT AIRBOXSYSTEM (SECURITY)","CATERING OFFICES/WAREHOUSES",
+    "CLEANING & HYGIENE SERVICES","OFFICE CLEANING SERVICES","PEST CONTROL","QUALITY AUDITS",
+    "SANITARY SERVICES","STORE CLEANING SERVICES","WAREHOUSE CLEANING","ARCHIVING",
+    "OTHER FACILITY SUPPORT SERVICES","SURROUNDINGS SERVICES","FIRE PROTECTION SERVICES",
+    "IN-STORE SECURITY","WAREHOUSE AND OFFICE SECURITY","DATACENTER HARDWARE",
+    "INFRASTRUCTURE H/W - OTHERS","PRINTING HARDWARE","STORE EQUIPMENT - OTHERS",
+    "STORE EQUIPMENT (ELECTRONIC SHELF LABELS)","STORE EQUIPMENT (HANDHELDS)",
+    "STORE EQUIPMENT (SCALES)","IT","AMS TESTING SERVICES",
+    "APPLICATION MAINTENANCE AND SUPPORT","APPLICATION PROJECT SERVICES",
+    "DATA CENTER SERVICES (INFRASTRUCTURE)","DATA CENTER SERVICES (IT 3RD PARTY SERVICES)",
+    "END USER COMPUTING","INFRASTRUCTURE OUTSOURCING SERVICES (IT 3RD PARTY SERVICES)",
+    "IT BREAK/FIX SERVICES AND MAINTENANCE","OTHER (INFRASTRUCTURE PROJECT SERVICES)",
+    "PAY CARDS","PEN TESTING","PRINTED SERVICES (IT)","TESTING AS A SERVICE",
+    "EXTERNAL IT PERSONNEL","IT CONSULTING","IT HIRED SERVICES",
+    "OTHER IT PROFESSIONAL SERVICES","LICENSE MANAGEMENT","SOFTWARE AS A SERVICE",
+    "SOFTWARE LICENSE","SOFTWARE MAINTENANCE","CONFERENCING SERVICES","FIXED TELEPHONY",
+    "MOBILE TELEPHONY","OTHER TELECOM SERVICES","TELECOM HARDWARE","WIDE AREA NETWORK",
+    "OUTSOURCED AMBIENT","OUTSOURCED CUSTOMS BROKERS","OUTSOURCED E-COM","OUTSOURCED FRESH",
+    "OUTSOURCED FROZEN","OUTSOURCED RETURNABLES","HOME DELIVERY TRANSPORT OPERATIONS",
+    "INTERNATIONAL INBOUND TRANSPORT OPERATIONS - RAIL TRANSPORT",
+    "INTERNATIONAL INBOUND TRANSPORT OPERATIONS - ROAD TRANSPORT",
+    "INTERNATIONAL INBOUND TRANSPORT OPERATIONS - SEA TRANSPORT",
+    "NATIONAL INBOUND TRANSPORT OPERATIONS","NATIONAL OUTBOUND TRANSPORT",
+    "OWNED VEHICLES FLEET","OWNED VEHICLES MAINTENANCE","SMALL PARCELS",
+    "BATTERIES FOR MATERIAL HANDLING EQUIPMENT","CRATES","MATERIAL HANDLING EQUIPMENT",
+    "MATERIAL HANDLING EQUIPMENT MAINTENANCE","OTHER (WAREHOUSE INVENTORY)","PALLETS",
+    "RACKING WAREHOUSE","ROLLING CARRIERS","MECHANIZATION SERVICE & MAINTENANCE",
+    "MECHANIZATION SOLUTION","COMMUNICATIONS/ PR","CREATIVE EXECUTION",
+    "LOCAL/ STORE EVENTS AND INSTORE ACTIVATIONS","LOYALTY","MONETIZATION",
+    "OUTDOOR / INDOOR SIGNAGE","PACKAGING DESIGN","STRATEGIC","(VOICE) ACTORS",
+    "FILM/VIDEO PRODUCTION","MUSIC INSTORE","PHOTOGRAPHY","AFFILIATE MARKETING",
+    "DIGITAL SIGNAGE","ONLINE MARKETING","SOCIAL MEDIA","WEB & APPS DESIGN",
+    "EVENTS (EVENTS)","CONSUMER INSIGHTS","MARKET INSIGHTS","MEDIA AGENCY","ONLINE",
+    "OUT OF HOME","PRINT ADVERTISEMENT","RADIO","SEO AND SEA","TV","PUBLICATION PAPER",
+    "PRINT MANAGEMENT","PRINT PRODUCTION","PRINT DISTRIBUTION",
+    "PRINT DISTRIBUTION QUALITY CHECK","SPONSORING","DONATIONS","EMPLOYEES SOCIAL BENEFITS",
+    "HR MEMBERSHIPS","WAGES","LAND DRAINING RATES","LOCAL TAXES","OTHER CHARGES & TAXES",
+    "PENALTIES","PROPERTY TAXES","SEWAGE CHARGES","MEMBERSHIPS","INTER COMPANY",
+    "FOR RESALE FUEL","INTERCOMPANY","TRADE / FOR RESALE (INTERCOMPANY)",
+    "CHAMBER OF COMMERCE",
+    "OTHER NGO (NON-GOVERNMENTAL ORGANIZATION) (NGO (NON-GOVERNMETAL ORGANIZATION))",
+    "RETAILER ASSOCIATION FEE","NON-NFR","COLLECTION FEES","LEGAL FEES",
+    "REAL ESTATE & CONSTRUCTION CHARGES","TRADE / FOR RESALE (NON-NFR SPEND)",
+    "OTHER INCOME",
+    "OTHER NGO (NON-GOVERNMENTAL ORGANIZATION) (OTHER NGO (NON-GOVERNMENTAL ORGANIZATION))",
+    "QUOTATION STOCK EXCHANGE","BAKERY BAGS","BOTTLES & TUBES","CARTON BOXES","CUPS & LIDS",
+    "FOILS","INSTORE BAGS AND NETS","LABELS & SLEEVES","PAPER WRAPS & RUBBERS",
+    "TRAYS, BOWLS AND PLATTERS","(THERMAL) TILL ROLLS","CLEANING CHEMICALS/MATERIALS",
+    "DISPOSABLES","DISTRIBUTION SUPPLIES","GENERAL SUPPLIES","INSTORE SUPPLY PAPER",
+    "MEAT DEPT. SUPPLIES","NON-PLASTIC CARRIER BAGS (CHECK OUTS)","OFFICE SUPPLIES",
+    "PAPER HYGIENE PRODUCTS","PLASTIC CARRIER BAGS (CHECK OUTS)","PROTECTIVE CLOTHING",
+    "QUALITY ASSURANCE SUPPLIES","SHELF LABELS","STORE PROMOTIONAL SUPPLIES","UNIFORMS",
+    "ELECTRICITY","PPAs","CAR FUEL","DIESEL FOR STANDBY GENERATORS","FUEL FOR RESALE",
+    "SUSTAINABLE FUELS","TRUCK FUEL","HEATING","NATURAL GAS","COLLECTIVE SYSTEMS",
+    "EXPIRED MEAT","GENERAL WASTE","GLASS WASTE","METAL WASTE","ORGANIC WASTE",
+    "OTHER WASTE","PAPER & CARDBOARD WASTE","PLASTIC & FOIL WASTE",
+    "RECYCLING EQUIPMENT BUY OR RENTAL","SANITARY WASTE","WASTE MANAGEMENT","WOOD WASTE","WATER",
+]
 
-DEFAULT_MATERIALS = sorted([
-    "Aluminium Cans", "Aluminium Foil", "Aluminium Sheet", "Caustic Soda",
-    "Cement", "Chlorine", "Cocoa Butter", "Copper Wire", "Corrugated Board",
-    "Cotton Yarn", "Diesel Fuel", "Electricity (Industrial)", "Ethanol",
-    "Flat Glass", "Flexible Packaging Film", "Float Glass", "Glass Bottles",
-    "HDPE Resin", "Kraft Paper", "Labels & Sleeves", "LDPE Film",
-    "Logistics - Air Freight", "Logistics - Road Freight", "Logistics - Sea Freight",
-    "Natural Gas (Industrial)", "Newsprint", "Nitrogen Gas", "Palm Oil",
-    "PET Bottles", "PET Resin", "Polypropylene Resin", "Shrink Wrap Film",
-    "Silica Sand", "Soda Ash", "Soybean Oil", "Stainless Steel Coil",
-    "Steel Coils (HRC)", "Sugar (Refined)", "Sulphuric Acid",
-    "Timber (Softwood)", "Tissue Paper", "Wheat Flour", "White Sugar",
-    "Wood Pulp", "Zinc (LME)",
-])
-
-RISK_CFG = {
+# ── Constants ─────────────────────────────────────────────────────────────────
+MAX_QUERIES  = 2
+VALID_SCORES = [15, 45, 70, 98]
+RISK_CFG     = {
     15: ("LOW",      "#22c55e", "#052e16", "#16a34a"),
     45: ("MODERATE", "#facc15", "#1c1a00", "#ca8a04"),
     70: ("HIGH",     "#f97316", "#1c0a00", "#ea580c"),
     98: ("CRITICAL", "#ef4444", "#1c0000", "#dc2626"),
 }
-VALID_SCORES = [15, 45, 70, 98]
+CHART_COLORS = ["#f97316","#3b82f6","#22c55e","#a855f7","#facc15","#ec4899","#06b6d4","#e11d48"]
 
-# ── Tool schemas (Anthropic generates guaranteed-valid JSON for these) ─────────
-
-TOOL_MODULE1 = {
+# ── Tool schemas ──────────────────────────────────────────────────────────────
+TOOL_M1 = {
     "name": "output_cost_analysis",
-    "description": "Output the structured cost head analysis result.",
+    "description": "Output structured cost head analysis.",
     "input_schema": {
         "type": "object",
         "properties": {
-            "scope_note": {"type": "string", "description": "One sentence on data availability and proxy usage."},
+            "scope_note": {"type": "string"},
             "freshness": {
                 "type": "object",
                 "properties": {
-                    "check_date":             {"type": "string"},
-                    "region":                 {"type": "string"},
-                    "tax_basis":              {"type": "string"},
-                    "primary_benchmarks":     {"type": "string"},
-                    "most_recent_source_date":{"type": "string"},
-                    "confidence_level":       {"type": "string", "enum": ["High", "Medium", "Low"]},
-                    "narrative":              {"type": "string"}
+                    "check_date": {"type": "string"}, "region": {"type": "string"},
+                    "tax_basis": {"type": "string"}, "primary_benchmarks": {"type": "string"},
+                    "most_recent_source_date": {"type": "string"},
+                    "confidence_level": {"type": "string", "enum": ["High","Medium","Low"]},
+                    "narrative": {"type": "string"}
                 },
                 "required": ["check_date","region","tax_basis","primary_benchmarks",
                              "most_recent_source_date","confidence_level","narrative"]
@@ -64,308 +180,125 @@ TOOL_MODULE1 = {
                 "items": {
                     "type": "object",
                     "properties": {
-                        "name":           {"type": "string"},
-                        "weight_pct":     {"type": "number"},
-                        "why_included":   {"type": "string"},
-                        "best_fit_index": {"type": "string"},
-                        "why_index":      {"type": "string"},
-                        "is_proxy":       {"type": "boolean"}
+                        "name": {"type": "string"}, "weight_pct": {"type": "number"},
+                        "why_included": {"type": "string"}, "best_fit_index": {"type": "string"},
+                        "why_index": {"type": "string"}, "is_proxy": {"type": "boolean"}
                     },
                     "required": ["name","weight_pct","why_included","best_fit_index","why_index","is_proxy"]
                 },
-                "minItems": 4,
-                "maxItems": 6
+                "minItems": 4, "maxItems": 6
             }
         },
         "required": ["scope_note","freshness","cost_heads"]
     }
 }
 
-TOOL_MODULE2 = {
-    "name": "output_inflation_analysis",
-    "description": "Output the structured inflation impact projection.",
+TOOL_INFLATION = {
+    "name": "output_inflation",
+    "description": "Output 6-month inflation impact projection by cost head.",
     "input_schema": {
         "type": "object",
         "properties": {
-            "analysis_basis":  {"type": "string"},
+            "analysis_basis": {"type": "string"},
             "key_assumptions": {"type": "string"},
-            "disclaimer":      {"type": "string"},
             "months": {
                 "type": "array",
                 "items": {
                     "type": "object",
                     "properties": {
-                        "label":             {"type": "string"},
-                        "weighted_total_pct":{"type": "number"},
-                        "key_driver":        {"type": "string"},
+                        "label": {"type": "string"},
+                        "weighted_total_pct": {"type": "number"},
+                        "key_driver": {"type": "string"},
                         "cost_head_impacts": {
                             "type": "array",
                             "items": {
                                 "type": "object",
                                 "properties": {
-                                    "name":                 {"type": "string"},
-                                    "weight_pct":           {"type": "number"},
+                                    "name": {"type": "string"},
+                                    "weight_pct": {"type": "number"},
                                     "projected_change_pct": {"type": "number"},
-                                    "direction":            {"type": "string", "enum": ["up","down","stable"]},
-                                    "driver":               {"type": "string"}
+                                    "direction": {"type": "string", "enum": ["up","down","stable"]},
+                                    "driver": {"type": "string"}
                                 },
                                 "required": ["name","weight_pct","projected_change_pct","direction","driver"]
                             }
                         }
                     },
                     "required": ["label","weighted_total_pct","key_driver","cost_head_impacts"]
-                }
+                },
+                "minItems": 6, "maxItems": 6
             }
         },
-        "required": ["analysis_basis","key_assumptions","disclaimer","months"]
+        "required": ["analysis_basis","key_assumptions","months"]
     }
 }
 
-TOOL_MODULE3 = {
-    "name": "output_shortage_tracker",
-    "description": "Output the structured supply shortage tracker analysis.",
+TOOL_SUPPLY = {
+    "name": "output_supply_risk",
+    "description": "Output detailed commodity supply risk analysis.",
     "input_schema": {
         "type": "object",
         "properties": {
-            "current_supply_risk":   {"type": "integer", "enum": [15, 45, 70, 98]},
-            "forecasted_supply_risk":{"type": "integer", "enum": [15, 45, 70, 98]},
-            "forecast_6m":           {"type": "string"},
-            "forecast_12m_best":     {"type": "string"},
-            "forecast_12m_base":     {"type": "string"},
-            "forecast_12m_worst":    {"type": "string"},
+            "material_service": {"type": "string"},
+            "current_supply_risk": {"type": "integer", "enum": [15,45,70,98]},
+            "forecasted_supply_risk": {"type": "integer", "enum": [15,45,70,98]},
             "variables": {
                 "type": "array",
                 "items": {
                     "type": "object",
                     "properties": {
-                        "title": {"type": "string"},
-                        "body":  {"type": "string"}
+                        "heading": {"type": "string"},
+                        "analysis": {"type": "string"}
                     },
-                    "required": ["title","body"]
+                    "required": ["heading","analysis"]
                 },
-                "minItems": 4,
-                "maxItems": 6
+                "minItems": 4, "maxItems": 6
+            },
+            "availability_forecast": {
+                "type": "object",
+                "properties": {
+                    "outlook_6m": {
+                        "type": "object",
+                        "properties": {"heading": {"type": "string"}, "analysis": {"type": "string"}},
+                        "required": ["heading","analysis"]
+                    },
+                    "best_case": {
+                        "type": "object",
+                        "properties": {"heading": {"type": "string"}, "analysis": {"type": "string"}},
+                        "required": ["heading","analysis"]
+                    },
+                    "base_case": {
+                        "type": "object",
+                        "properties": {"heading": {"type": "string"}, "analysis": {"type": "string"}},
+                        "required": ["heading","analysis"]
+                    },
+                    "worst_case": {
+                        "type": "object",
+                        "properties": {"heading": {"type": "string"}, "analysis": {"type": "string"}},
+                        "required": ["heading","analysis"]
+                    }
+                },
+                "required": ["outlook_6m","best_case","base_case","worst_case"]
             },
             "additional_comments": {
                 "type": "array",
                 "items": {
                     "type": "object",
                     "properties": {
-                        "title":      {"type": "string"},
-                        "body":       {"type": "string"},
+                        "heading": {"type": "string"},
+                        "analysis": {"type": "string"},
                         "references": {"type": "array", "items": {"type": "string"}}
                     },
-                    "required": ["title","body","references"]
+                    "required": ["heading","analysis","references"]
                 },
-                "minItems": 3,
-                "maxItems": 4
+                "minItems": 3, "maxItems": 4
             },
             "all_references": {"type": "array", "items": {"type": "string"}}
         },
-        "required": [
-            "current_supply_risk","forecasted_supply_risk",
-            "forecast_6m","forecast_12m_best","forecast_12m_base","forecast_12m_worst",
-            "variables","additional_comments","all_references"
-        ]
+        "required": ["material_service","current_supply_risk","forecasted_supply_risk",
+                     "variables","availability_forecast","additional_comments","all_references"]
     }
 }
-
-
-# ── Helper utilities ──────────────────────────────────────────────────────────
-
-def today_str():
-    return datetime.today().strftime("%d %B %Y")
-
-
-def get_api_key():
-    try:
-        return st.secrets["ANTHROPIC_API_KEY"]
-    except Exception:
-        st.error(
-            "API key not configured. "
-            "Go to Streamlit Cloud > Settings > Secrets and add: "
-            'ANTHROPIC_API_KEY = "sk-ant-..."'
-        )
-        st.stop()
-
-
-def load_materials():
-    try:
-        df = pd.read_excel("materials.xlsx")
-        for col in ["Material","material","L3 Category","Category","Service","Name"]:
-            if col in df.columns:
-                items = df[col].dropna().astype(str).str.strip().tolist()
-                items = [i for i in items if i]
-                if items:
-                    return sorted(items)
-        col0 = df.iloc[:,0].dropna().astype(str).str.strip().tolist()
-        return sorted([i for i in col0 if i]) or DEFAULT_MATERIALS
-    except Exception:
-        return DEFAULT_MATERIALS
-
-
-def snap_risk(score):
-    try:
-        score = int(float(score))
-    except Exception:
-        return 45
-    return min(VALID_SCORES, key=lambda x: abs(x - score))
-
-
-def risk_badge_html(score):
-    score = snap_risk(score)
-    label, color, bg, border = RISK_CFG[score]
-    return (f'<span class="risk-badge" '
-            f'style="color:{color};background:{bg};border:1.5px solid {border};">'
-            f'● {score} — {label}</span>')
-
-
-def conf_class(level):
-    l = str(level).lower()
-    if "high" in l: return "conf-high"
-    if "low"  in l: return "conf-low"
-    return "conf-med"
-
-
-def month_labels(n):
-    d = date.today()
-    labels = []
-    for _ in range(n):
-        month = d.month % 12 + 1
-        year  = d.year + (1 if d.month == 12 else 0)
-        d = d.replace(year=year, month=month, day=1)
-        labels.append(d.strftime("%B %Y"))
-    return labels
-
-
-def extract_all_text(response):
-    return "\n\n".join(
-        b.text.strip() for b in response.content
-        if hasattr(b, "type") and b.type == "text"
-    )
-
-
-def extract_tool_result(response, tool_name):
-    """Extract the input dict from a forced tool_use response. Always valid."""
-    for b in response.content:
-        if hasattr(b, "type") and b.type == "tool_use" and b.name == tool_name:
-            return b.input
-    raise ValueError(
-        f"Model did not call the '{tool_name}' tool. "
-        "Response content: " + str([getattr(b,"type","?") for b in response.content])
-    )
-
-
-# ── Two-step API calls ────────────────────────────────────────────────────────
-
-def _research(client, prompt):
-    """Step 1: Web-search enabled, returns plain-text research notes."""
-    resp = client.messages.create(
-        model="claude-opus-4-5",
-        max_tokens=2500,
-        tools=[{"type": "web_search_20250305", "name": "web_search"}],
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return extract_all_text(resp)
-
-
-def _structure(client, research_text, tool_def, context_prompt):
-    """Step 2: Force tool_use → Anthropic guarantees valid JSON. No web search."""
-    tool_name = tool_def["name"]
-    resp = client.messages.create(
-        model="claude-opus-4-5",
-        max_tokens=2000,
-        tools=[tool_def],
-        tool_choice={"type": "tool", "name": tool_name},
-        messages=[{
-            "role": "user",
-            "content": (
-                f"Research notes:\n\n{research_text}\n\n"
-                f"{context_prompt}\n\n"
-                f"Call the {tool_name} tool now with the structured output."
-            )
-        }],
-    )
-    return extract_tool_result(resp, tool_name)
-
-
-# ── Module runners ────────────────────────────────────────────────────────────
-
-def run_module1(material, region, api_key):
-    client = anthropic.Anthropic(api_key=api_key)
-    today  = today_str()
-
-    research = _research(client,
-        f"You are a senior procurement cost analyst. Today is {today}.\n"
-        f"Research the cost structure for: {material} in {region}.\n"
-        f"Identify 4-6 cost heads (e.g. Energy, Raw Materials, Labour, Logistics, Conversion) "
-        f"with approximate weight percentages summing to 100%.\n"
-        f"For each cost head find the best public benchmark index or proxy available in {region}.\n"
-        f"Find the most recent data dates for each benchmark.\n"
-        f"Note the overall confidence level (High/Medium/Low) based on data availability.\n"
-        f"Note the applicable tax/delivery basis for {region} (e.g. Duty Paid Rotterdam).\n"
-        f"Be specific: include index names, issuing bodies, and most recent data dates."
-    )
-
-    return _structure(client, research, TOOL_MODULE1,
-        f"Structure the above research for {material} in {region}. "
-        f"Set check_date to '{today}'. Weights must sum to 100."
-    )
-
-
-def run_module2(material, region, periods, cost_heads, api_key):
-    client  = anthropic.Anthropic(api_key=api_key)
-    today   = today_str()
-    labels  = month_labels(periods)
-    ch_list = ", ".join(f"{c['name']} ({c['weight_pct']}%)" for c in cost_heads)
-
-    research = _research(client,
-        f"You are a senior procurement cost analyst. Today is {today}.\n"
-        f"Research forward price signals for: {material} in {region}.\n"
-        f"Cost heads to cover: {ch_list}\n"
-        f"Months to project: {', '.join(labels)}\n"
-        f"Find the latest futures curves, forward price data, and analyst forecasts "
-        f"for each cost head benchmark in {region}.\n"
-        f"For each month and each cost head, estimate the percentage change vs current levels.\n"
-        f"Positive = cost increase. Negative = cost decrease.\n"
-        f"Provide specific data points: actual futures levels or consensus ranges."
-    )
-
-    return _structure(client, research, TOOL_MODULE2,
-        f"Structure the research for {material} in {region}. "
-        f"Include exactly these months: {labels}. "
-        f"weighted_total_pct for each month = sum of (projected_change_pct * weight_pct / 100). "
-        f"Set disclaimer to: Estimate based on public forward signals as of {today}. Not a financial model."
-    )
-
-
-def run_module3(material, region, api_key):
-    client = anthropic.Anthropic(api_key=api_key)
-    today  = today_str()
-
-    research = _research(client,
-        f"You are a senior procurement supply risk analyst. Today is {today}.\n"
-        f"Research the current supply risk for: {material} in {region}.\n"
-        f"Search for the latest data on:\n"
-        f"- Production issues, plant shutdowns, capacity changes\n"
-        f"- Trade flows, import dependence, export restrictions, sanctions\n"
-        f"- Logistics constraints, freight rates, port disruptions\n"
-        f"- Geopolitical risks and policy changes affecting supply\n"
-        f"- Energy input costs and carbon compliance costs\n"
-        f"- Weather or seasonal impacts on availability\n"
-        f"- Downstream L3 category impacts and buyer exposure\n"
-        f"Provide a 6-month availability outlook and 12-month best/base/worst scenarios.\n"
-        f"Identify 3-4 specific buyer watchpoints or concentration risks.\n"
-        f"Include URLs of all sources consulted. Focus entirely on {region}."
-    )
-
-    return _structure(client, research, TOOL_MODULE3,
-        f"Structure the supply risk research for {material} in {region}. "
-        f"Assign current_supply_risk and forecasted_supply_risk using only: 15, 45, 70, or 98. "
-        f"15 = least risk, 98 = highest risk. "
-        f"Include real source URLs in references fields."
-    )
-
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -373,377 +306,556 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
 html,body,[class*="css"]{font-family:'DM Sans',sans-serif;background:#080d16;color:#e5e7eb;}
 .stApp{background:#080d16;}
-.block-container{max-width:1100px;padding-top:1.5rem;padding-bottom:4rem;}
+.block-container{padding:0 !important;max-width:100% !important;}
 h1,h2,h3{font-family:'DM Sans',sans-serif;color:#f9fafb;}
 #MainMenu,footer,header{visibility:hidden;}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;
-  background:linear-gradient(90deg,#0f172a,#0a1628);border-bottom:1px solid #1e3a5f;
-  border-radius:10px;margin-bottom:1.5rem;}
-.brand-name{font-weight:700;font-size:1rem;color:#f9fafb;}
-.brand-sub{font-size:0.62rem;color:#4b5563;letter-spacing:0.1em;}
-.date-pill{font-size:0.68rem;color:#4b5563;letter-spacing:0.08em;
-  background:rgba(59,130,246,0.08);border:1px solid #1e3a5f;
-  border-radius:6px;padding:4px 10px;font-family:'DM Mono',monospace;}
-.card{background:linear-gradient(135deg,#0f172a,#111827);border:1px solid #1e3a5f;
-  border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,0.4);}
-.card-warn{border-color:rgba(250,204,21,0.3)!important;}
-.slabel{font-size:0.62rem;font-weight:700;color:#6b7280;letter-spacing:0.12em;
-  text-transform:uppercase;margin-bottom:10px;font-family:'DM Mono',monospace;}
-.risk-badge{display:inline-block;border-radius:6px;padding:5px 14px;font-weight:700;
-  font-size:0.78rem;letter-spacing:0.06em;font-family:'DM Mono',monospace;}
-.module-header{font-size:0.72rem;font-weight:700;color:#3b82f6;letter-spacing:0.15em;
-  text-transform:uppercase;margin-bottom:4px;font-family:'DM Mono',monospace;}
-.module-title{font-size:1.15rem;font-weight:700;color:#f9fafb;margin-bottom:16px;}
-.ft-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
-.ft-table th{background:#0f172a;color:#6b7280;font-size:0.62rem;letter-spacing:0.1em;
-  text-transform:uppercase;padding:8px 12px;border-bottom:1px solid #1e3a5f;
-  font-family:'DM Mono',monospace;text-align:left;}
-.ft-table td{padding:9px 12px;border-bottom:1px solid #0f172a;color:#d1d5db;vertical-align:top;}
-.ft-table tr:last-child td{border-bottom:none;}
-.ft-key{color:#93c5fd;font-family:'DM Mono',monospace;font-size:0.78rem;white-space:nowrap;}
-.ch-table{width:100%;border-collapse:collapse;font-size:0.8rem;}
-.ch-table th{background:#0a1121;color:#6b7280;font-size:0.6rem;letter-spacing:0.1em;
-  text-transform:uppercase;padding:9px 12px;border-bottom:2px solid #1e3a5f;
-  font-family:'DM Mono',monospace;text-align:left;}
-.ch-table td{padding:9px 12px;border-bottom:1px solid #0f172a;color:#d1d5db;vertical-align:top;line-height:1.55;}
-.ch-table tr:last-child td{border-bottom:none;}
-.weight-pill{display:inline-block;background:rgba(59,130,246,0.15);
-  border:1px solid rgba(59,130,246,0.4);border-radius:20px;padding:2px 9px;
-  font-weight:700;color:#93c5fd;font-family:'DM Mono',monospace;font-size:0.78rem;}
+
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 24px;background:#0a1628;
+  border-bottom:1px solid #1e3a5f;
+}
+.brand{font-weight:700;font-size:1rem;color:#f9fafb;letter-spacing:-0.01em;}
+.brand-sub{font-size:0.6rem;color:#4b5563;letter-spacing:0.1em;}
+.date-pill{font-size:0.65rem;color:#4b5563;background:rgba(59,130,246,0.08);
+  border:1px solid #1e3a5f;border-radius:5px;padding:3px 9px;
+  font-family:'DM Mono',monospace;}
+
+.panel{height:calc(100vh - 60px);overflow-y:auto;padding:16px;}
+.panel-1{background:#0a1121;border-right:1px solid #1e3a5f;}
+.panel-2{background:#080d16;border-right:1px solid #1e3a5f;}
+.panel-3{background:#080d16;}
+
+.slabel{font-size:0.6rem;font-weight:700;color:#4b5563;letter-spacing:0.12em;
+  text-transform:uppercase;margin-bottom:7px;font-family:'DM Mono',monospace;}
+.card{background:#0f172a;border:1px solid #1e3a5f;border-radius:10px;
+  padding:14px;margin-bottom:12px;}
+.card-sm{background:#0f172a;border:1px solid #1e3a5f;border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+
+.ch-card{background:#0f172a;border:1px solid #1e3a5f;border-radius:9px;
+  padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s;}
+.ch-card:hover{border-color:#3b82f6;}
+.ch-card-active{border:1.5px solid #3b82f6 !important;background:#0a1628 !important;}
+.ch-name{font-size:0.7rem;color:#6b7280;text-transform:uppercase;
+  letter-spacing:0.1em;margin-bottom:4px;}
+.ch-weight{font-size:1.4rem;font-weight:700;color:#f9fafb;line-height:1;}
+.ch-index{font-size:0.68rem;color:#4b5563;margin-top:5px;}
+.ch-arrow{font-size:0.65rem;color:#4b5563;margin-top:6px;}
+
+.risk-badge{display:inline-block;border-radius:5px;padding:4px 10px;
+  font-weight:700;font-size:0.72rem;letter-spacing:0.06em;font-family:'DM Mono',monospace;}
 .proxy-tag{display:inline-block;background:rgba(250,204,21,0.1);
-  border:1px solid rgba(250,204,21,0.3);border-radius:4px;padding:1px 6px;
-  font-size:0.68rem;color:#fde68a;font-family:'DM Mono',monospace;margin-left:4px;}
-.inf-table{width:100%;border-collapse:collapse;font-size:0.8rem;}
-.inf-table th{background:#0a1121;color:#6b7280;font-size:0.6rem;letter-spacing:0.1em;
-  text-transform:uppercase;padding:8px 12px;border-bottom:2px solid #1e3a5f;
-  font-family:'DM Mono',monospace;text-align:left;}
-.inf-table td{padding:9px 12px;border-bottom:1px solid #0f172a;color:#d1d5db;vertical-align:top;}
-.inf-table tr:last-child td{border-bottom:none;}
-.inf-pos{color:#f97316;font-weight:700;font-family:'DM Mono',monospace;}
-.inf-neg{color:#22c55e;font-weight:700;font-family:'DM Mono',monospace;}
-.inf-neu{color:#facc15;font-weight:700;font-family:'DM Mono',monospace;}
-.inf-total{background:rgba(59,130,246,0.08)!important;font-weight:700;}
-.bullet-block{border-left:2px solid #1e3a5f;padding:10px 14px;margin-bottom:10px;
+  border:1px solid rgba(250,204,21,0.3);border-radius:3px;padding:1px 5px;
+  font-size:0.6rem;color:#fde68a;font-family:'DM Mono',monospace;margin-left:4px;}
+
+.bullet{border-left:2px solid #1e3a5f;padding:9px 12px;margin-bottom:9px;
   border-radius:0 6px 6px 0;background:rgba(255,255,255,0.02);}
-.bullet-title{color:#93c5fd;font-weight:600;font-size:0.84rem;}
-.bullet-body{color:#d1d5db;font-size:0.82rem;line-height:1.65;margin-top:4px;}
-.scenario-best{border-left:3px solid #22c55e;padding:10px 14px;background:rgba(34,197,94,0.04);border-radius:0 8px 8px 0;margin-bottom:8px;}
-.scenario-base{border-left:3px solid #facc15;padding:10px 14px;background:rgba(250,204,21,0.04);border-radius:0 8px 8px 0;margin-bottom:8px;}
-.scenario-worst{border-left:3px solid #ef4444;padding:10px 14px;background:rgba(239,68,68,0.04);border-radius:0 8px 8px 0;margin-bottom:8px;}
-.sc-label{font-size:0.62rem;font-weight:700;letter-spacing:0.1em;margin-bottom:4px;font-family:'DM Mono',monospace;}
-.sc-text{font-size:0.82rem;color:#d1d5db;line-height:1.6;}
-.scope-note{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);
-  border-radius:8px;padding:12px 16px;font-size:0.8rem;color:#93c5fd;line-height:1.6;margin-bottom:16px;}
+.bullet-marker{color:#3b82f6;font-weight:700;margin-right:4px;}
+.bullet-heading{color:#93c5fd;font-weight:600;font-size:0.82rem;}
+.bullet-body{color:#d1d5db;font-size:0.8rem;line-height:1.65;}
+
+.scenario-best{border-left:2px solid #22c55e;padding:9px 12px;
+  background:rgba(34,197,94,0.04);border-radius:0 7px 7px 0;margin-bottom:7px;}
+.scenario-base{border-left:2px solid #ca8a04;padding:9px 12px;
+  background:rgba(250,204,21,0.04);border-radius:0 7px 7px 0;margin-bottom:7px;}
+.scenario-worst{border-left:2px solid #dc2626;padding:9px 12px;
+  background:rgba(239,68,68,0.04);border-radius:0 7px 7px 0;margin-bottom:7px;}
+.sc-label{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;
+  margin-bottom:3px;font-family:'DM Mono',monospace;}
+.sc-heading{color:#e5e7eb;font-weight:600;font-size:0.79rem;}
+.sc-body{color:#9ca3af;font-size:0.78rem;line-height:1.6;margin-top:3px;}
+
+.ref-link{font-size:0.65rem;color:#3b82f6;word-break:break-all;
+  line-height:1.8;font-family:'DM Mono',monospace;display:block;}
 .conf-high{color:#22c55e;font-weight:700;}
 .conf-med{color:#facc15;font-weight:700;}
 .conf-low{color:#f97316;font-weight:700;}
-.ref-link{font-size:0.7rem;color:#3b82f6;word-break:break-all;line-height:1.9;font-family:'DM Mono',monospace;}
+
+.period-btn{display:inline-block;padding:3px 10px;border:1px solid #1e3a5f;
+  border-radius:5px;font-size:0.7rem;color:#6b7280;cursor:pointer;
+  margin-right:4px;background:#0f172a;}
+.period-btn-active{border-color:#3b82f6;color:#93c5fd;background:#0a1628;}
+
+.footer{text-align:center;padding:16px;border-top:1px solid #0f172a;
+  font-size:0.65rem;color:#374151;line-height:2;}
+
 div[data-testid="stButton"] button{
-  background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;font-weight:700;
-  border:none;border-radius:10px;padding:0.55rem 2rem;
-  font-family:'DM Sans',sans-serif;font-size:0.9rem;letter-spacing:0.04em;}
+  background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;
+  font-weight:700;border:none;border-radius:8px;
+  padding:0.5rem 1.5rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;}
 div[data-testid="stButton"] button:hover{
-  background:linear-gradient(135deg,#2563eb,#3b82f6);
-  box-shadow:0 0 20px rgba(59,130,246,0.3);}
+  background:linear-gradient(135deg,#2563eb,#3b82f6);}
+div[data-testid="stButton"] button:disabled{background:#1e3a5f;color:#4b5563;}
 </style>
 """, unsafe_allow_html=True)
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def today_str():
+    return datetime.today().strftime("%d %B %Y")
 
-# ── Display functions ─────────────────────────────────────────────────────────
+def get_api_key():
+    try:
+        return st.secrets["ANTHROPIC_API_KEY"]
+    except Exception:
+        st.error("API key not configured. Go to Streamlit Cloud > Settings > Secrets and add: ANTHROPIC_API_KEY = \"sk-ant-...\"")
+        st.stop()
 
-def display_module1(d, material, region):
-    f  = d.get("freshness", {})
-    ch = d.get("cost_heads", [])
+def snap_risk(score):
+    try: score = int(float(score))
+    except: return 45
+    return min(VALID_SCORES, key=lambda x: abs(x - score))
 
-    st.markdown('<div class="module-header">MODULE 1</div>', unsafe_allow_html=True)
-    st.markdown('<div class="module-title">Cost Head Analysis</div>', unsafe_allow_html=True)
+def risk_badge(score):
+    score = snap_risk(score)
+    label, color, bg, border = RISK_CFG[score]
+    return (f'<span class="risk-badge" style="color:{color};background:{bg};border:1.5px solid {border};">' +
+            f'● {score} — {label}</span>')
 
-    if d.get("scope_note"):
-        st.markdown(
-            f'<div class="scope-note">{material} ({region}) — {d["scope_note"]}</div>',
-            unsafe_allow_html=True)
+def conf_cls(level):
+    l = str(level).lower()
+    if "high" in l: return "conf-high"
+    if "low"  in l: return "conf-low"
+    return "conf-med"
 
-    st.markdown('<div class="slabel">B. Freshness Block</div>', unsafe_allow_html=True)
-    conf = f.get("confidence_level", "Medium")
-    rows = "".join([
-        f'<tr><td class="ft-key">Market status check date</td><td>{f.get("check_date", today_str())}</td></tr>',
-        f'<tr><td class="ft-key">Region</td><td>{f.get("region", region)}</td></tr>',
-        f'<tr><td class="ft-key">Tax basis</td><td>{f.get("tax_basis","N/A")}</td></tr>',
-        f'<tr><td class="ft-key">Primary benchmark(s) used</td><td>{f.get("primary_benchmarks","-")}</td></tr>',
-        f'<tr><td class="ft-key">Most recent source date found</td><td>{f.get("most_recent_source_date","-")}</td></tr>',
-        f'<tr><td class="ft-key">Confidence level</td>'
-        f'<td><span class="{conf_class(conf)}">{conf}</span></td></tr>',
-    ])
-    st.markdown(
-        f'<div class="card"><table class="ft-table"><thead><tr><th>Item</th><th>Value</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>',
-        unsafe_allow_html=True)
-    if f.get("narrative"):
-        st.markdown(
-            f'<div class="card" style="padding:14px 20px;">'
-            f'<div style="font-size:0.82rem;color:#d1d5db;line-height:1.7;">{f["narrative"]}</div></div>',
-            unsafe_allow_html=True)
+def month_labels_from_today(n=6):
+    d = date.today()
+    labels = []
+    for _ in range(n):
+        month = d.month % 12 + 1
+        year  = d.year + (1 if d.month == 12 else 0)
+        d = d.replace(year=year, month=month, day=1)
+        labels.append(d.strftime("%b %Y"))
+    return labels
 
-    st.markdown('<div class="slabel" style="margin-top:16px;">C. Cost-Head Table</div>',
-                unsafe_allow_html=True)
-    ch_rows = ""
-    for c in ch:
-        proxy = '<span class="proxy-tag">PROXY</span>' if c.get("is_proxy") else ""
-        ch_rows += (
-            f'<tr><td><strong style="color:#f9fafb;">{c.get("name","")}</strong></td>'
-            f'<td><span class="weight-pill">{c.get("weight_pct",0)}%</span></td>'
-            f'<td>{c.get("why_included","")}</td>'
-            f'<td>{c.get("best_fit_index","")}{proxy}</td>'
-            f'<td>{c.get("why_index","")}</td></tr>'
-        )
-    st.markdown(
-        f'<div class="card"><table class="ch-table"><thead><tr>'
-        f'<th>Cost Head</th><th>Weight %</th><th>Why Included</th>'
-        f'<th>Best-Fit Index / Proxy</th><th>Why This Index</th>'
-        f'</tr></thead><tbody>{ch_rows}</tbody></table></div>',
-        unsafe_allow_html=True)
-    return ch
+def extract_all_text(response):
+    return "\n\n".join(
+        b.text.strip() for b in response.content
+        if hasattr(b, "type") and b.type == "text"
+    )
 
+def extract_tool_result(response, tool_name):
+    for b in response.content:
+        if hasattr(b, "type") and b.type == "tool_use" and b.name == tool_name:
+            return b.input
+    raise ValueError(f"Model did not call tool '{tool_name}'. Types returned: {[getattr(b,'type','?') for b in response.content]}")
 
-def display_module2(d):
-    st.markdown('<hr style="border:none;border-top:1px solid #1e3a5f;margin:20px 0;">',
-                unsafe_allow_html=True)
-    st.markdown('<div class="module-header">MODULE 2</div>', unsafe_allow_html=True)
-    st.markdown('<div class="module-title">Inflation Impact Projection</div>', unsafe_allow_html=True)
+def _research(client, prompt):
+    r = client.messages.create(
+        model="claude-opus-4-5", max_tokens=2500,
+        tools=[{"type": "web_search_20250305", "name": "web_search"}],
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return extract_all_text(r)
 
-    if d.get("analysis_basis"):
-        st.markdown(f'<div class="scope-note">{d["analysis_basis"]}</div>', unsafe_allow_html=True)
+def _structure(client, research_text, tool_def, context_prompt):
+    tool_name = tool_def["name"]
+    r = client.messages.create(
+        model="claude-opus-4-5", max_tokens=2000,
+        tools=[tool_def],
+        tool_choice={"type": "tool", "name": tool_name},
+        messages=[{"role": "user", "content":
+            f"Research notes:\n\n{research_text}\n\n{context_prompt}\n\nCall the {tool_name} tool now."}],
+    )
+    return extract_tool_result(r, tool_name)
 
-    months = d.get("months", [])
-    if months:
-        heads  = [h.get("name","") for h in months[0].get("cost_head_impacts",[])]
-        header = "<tr><th>Month</th>" + "".join(f"<th>{h}</th>" for h in heads) + "<th>Weighted Total</th><th>Key Driver</th></tr>"
-        rows   = ""
+# ── Module runners ─────────────────────────────────────────────────────────────
+def run_module1(cat, region, api_key):
+    client = anthropic.Anthropic(api_key=api_key)
+    today  = today_str()
+    res = _research(client,
+        f"Senior procurement cost analyst. Today is {today}. Research cost structure for: {cat} in {region}. "
+        f"Identify 4-6 cost heads (Energy, Raw Materials, Labour, Logistics, Conversion etc.) with weights summing to 100%. "
+        f"For each find the best public benchmark index or proxy in {region}. Note confidence level and tax/delivery basis.")
+    return _structure(client, res, TOOL_M1,
+        f"Structure cost analysis for {cat} in {region}. Set check_date to '{today}'. Weights must sum to 100.")
+
+def run_inflation(cat, region, cost_heads, api_key):
+    client  = anthropic.Anthropic(api_key=api_key)
+    today   = today_str()
+    labels  = month_labels_from_today(6)
+    ch_list = ", ".join(f"{c['name']} ({c['weight_pct']}%)" for c in cost_heads)
+    res = _research(client,
+        f"Senior procurement cost analyst. Today is {today}. "
+        f"Research forward price signals for: {cat} in {region}. Cost heads: {ch_list}. "
+        f"Find latest futures curves and analyst forecasts for each benchmark. "
+        f"Project % change vs current levels for months: {labels}.")
+    return _structure(client, res, TOOL_INFLATION,
+        f"Structure inflation projection for {cat} in {region}. "
+        f"Exactly 6 months: {labels}. "
+        f"weighted_total_pct = sum of (projected_change_pct * weight_pct / 100).")
+
+def run_supply_risk(cat, cost_head_name, commodity, region, api_key):
+    client = anthropic.Anthropic(api_key=api_key)
+    today  = today_str()
+    res = _research(client,
+        f"Senior procurement supply risk analyst. Today is {today}. "
+        f"Research supply risk for commodity: {commodity} (cost head: {cost_head_name} for {cat}) in {region}. "
+        f"Find latest data on: production issues, trade flows, import dependence, logistics constraints, "
+        f"geopolitical exposure, sanctions, energy input risks, weather impacts, policy changes. "
+        f"Provide 6-month outlook and 12-month best/base/worst scenarios. "
+        f"Identify 3-4 buyer watchpoints. Include real source URLs.")
+    return _structure(client, res, TOOL_SUPPLY,
+        f"Structure supply risk for {commodity} ({cat} - {cost_head_name}) in {region}. "
+        f"Assign risk scores only from: 15, 45, 70, 98 (15=least, 98=highest). "
+        f"Each bullet heading must be SHORT (3-6 words in UPPER CASE). "
+        f"Analysis text must be 2-4 specific sentences with figures and dates. "
+        f"Include real source URLs in references.")
+
+# ── Chart builder ──────────────────────────────────────────────────────────────
+def build_chart(inflation_data, periods):
+    months = inflation_data.get("months", [])[:periods]
+    if not months:
+        return None
+    all_heads = [h["name"] for h in months[0].get("cost_head_impacts", [])]
+    labels    = [m["label"] for m in months]
+    totals    = [round(m.get("weighted_total_pct", 0), 2) for m in months]
+
+    fig = go.Figure()
+    for i, head in enumerate(all_heads):
+        vals = []
         for m in months:
-            cells = ""
-            for imp in m.get("cost_head_impacts",[]):
-                try:    pct = float(imp.get("projected_change_pct",0))
-                except: pct = 0.0
-                css  = "inf-pos" if pct > 0 else ("inf-neg" if pct < 0 else "inf-neu")
-                sign = "+" if pct > 0 else ""
-                cells += (f'<td class="{css}">{sign}{pct:.1f}%<br>'
-                          f'<span style="font-size:0.68rem;color:#6b7280;font-weight:400;">'
-                          f'{imp.get("driver","")}</span></td>')
-            try:    total = float(m.get("weighted_total_pct",0))
-            except: total = 0.0
-            t_css = "inf-pos" if total > 0 else ("inf-neg" if total < 0 else "inf-neu")
-            sign  = "+" if total > 0 else ""
-            rows += (f'<tr><td style="color:#f9fafb;font-weight:600;white-space:nowrap;">'
-                     f'{m.get("label","")}</td>{cells}'
-                     f'<td class="inf-total {t_css}">{sign}{total:.2f}%</td>'
-                     f'<td style="font-size:0.78rem;color:#d1d5db;">{m.get("key_driver","")}</td></tr>')
-        st.markdown(
-            f'<div class="card" style="overflow-x:auto;">'
-            f'<table class="inf-table"><thead>{header}</thead><tbody>{rows}</tbody></table></div>',
-            unsafe_allow_html=True)
+            for imp in m.get("cost_head_impacts", []):
+                if imp["name"] == head:
+                    vals.append(round(imp.get("projected_change_pct", 0) * imp.get("weight_pct", 0) / 100, 3))
+                    break
+            else:
+                vals.append(0)
+        fig.add_trace(go.Bar(
+            name=head, x=labels, y=vals,
+            marker_color=CHART_COLORS[i % len(CHART_COLORS)],
+            text=[f"{v:+.2f}%" for v in vals],
+            textposition="inside", textfont_size=9,
+        ))
+    fig.add_trace(go.Scatter(
+        name="Weighted total", x=labels, y=totals,
+        mode="lines+markers+text",
+        line=dict(color="#ffffff", width=2, dash="dot"),
+        marker=dict(size=7, color="#ffffff"),
+        text=[f"{v:+.2f}%" for v in totals],
+        textposition="top center", textfont=dict(size=9, color="#ffffff"),
+    ))
+    fig.update_layout(
+        barmode="relative",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="#0a1121",
+        font=dict(family="DM Sans, sans-serif", color="#d1d5db", size=11),
+        legend=dict(orientation="h", y=-0.18, font_size=10,
+                    bgcolor="rgba(0,0,0,0)", bordercolor="rgba(0,0,0,0)"),
+        margin=dict(l=40, r=20, t=20, b=80),
+        height=280,
+        xaxis=dict(gridcolor="#1e3a5f", tickfont_size=10),
+        yaxis=dict(gridcolor="#1e3a5f", ticksuffix="%",
+                   zeroline=True, zerolinecolor="#1e3a5f", tickfont_size=10),
+        hoverlabel=dict(bgcolor="#0f172a", bordercolor="#1e3a5f", font_size=11),
+    )
+    return fig
 
-    if d.get("key_assumptions"):
-        st.markdown(
-            f'<div class="card card-warn"><div class="slabel">Key Assumptions</div>'
-            f'<div style="font-size:0.82rem;color:#d1d5db;line-height:1.7;">{d["key_assumptions"]}</div></div>',
-            unsafe_allow_html=True)
-    if d.get("disclaimer"):
-        st.markdown(
-            f'<div style="font-size:0.72rem;color:#4b5563;margin-top:6px;">&#9888; {d["disclaimer"]}</div>',
-            unsafe_allow_html=True)
+# ── Display helpers ────────────────────────────────────────────────────────────
+def bullet_html(heading, analysis, accent_color="#93c5fd"):
+    return (f'<div class="bullet">' +
+            f'<div><span class="bullet-marker">&gt;</span>' +
+            f'<span class="bullet-heading" style="color:{accent_color};">{heading}:</span></div>' +
+            f'<div class="bullet-body">{analysis}</div></div>')
 
+def scenario_html(css_class, label_color, label, heading, analysis):
+    return (f'<div class="{css_class}">' +
+            f'<div class="sc-label" style="color:{label_color};">{label}</div>' +
+            f'<div class="sc-heading">{heading}</div>' +
+            f'<div class="sc-body">{analysis}</div></div>')
 
-def display_module3(d):
-    st.markdown('<hr style="border:none;border-top:1px solid #1e3a5f;margin:20px 0;">',
-                unsafe_allow_html=True)
-    st.markdown('<div class="module-header">MODULE 3</div>', unsafe_allow_html=True)
-    st.markdown('<div class="module-title">Shortage Tracker</div>', unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(
-            f'<div class="card"><div class="slabel">Current Supply Risk</div>'
-            f'{risk_badge_html(d.get("current_supply_risk",45))}</div>',
-            unsafe_allow_html=True)
-    with col2:
-        st.markdown(
-            f'<div class="card"><div class="slabel">Forecasted Supply Risk</div>'
-            f'{risk_badge_html(d.get("forecasted_supply_risk",45))}</div>',
-            unsafe_allow_html=True)
-
-    if d.get("variables"):
-        st.markdown('<div class="slabel" style="margin-top:8px;">Variables Impacting Availability</div>',
-                    unsafe_allow_html=True)
-        html = '<div class="card">'
-        for v in d["variables"]:
-            html += (f'<div class="bullet-block">'
-                     f'<div class="bullet-title">&gt; {v.get("title","")}</div>'
-                     f'<div class="bullet-body">{v.get("body","")}</div></div>')
-        html += "</div>"
-        st.markdown(html, unsafe_allow_html=True)
-
-    st.markdown('<div class="slabel" style="margin-top:4px;">Availability Forecast</div>',
-                unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="card">'
-        f'<div class="slabel" style="color:#4b5563;">6-Month Outlook</div>'
-        f'<div style="font-size:0.82rem;color:#d1d5db;line-height:1.7;margin-bottom:16px;">'
-        f'&gt; {d.get("forecast_6m","")}</div>'
-        f'<div class="slabel" style="color:#4b5563;">12-Month Scenarios</div>'
-        f'<div class="scenario-best"><div class="sc-label" style="color:#22c55e;">&#9650; BEST CASE</div>'
-        f'<div class="sc-text">{d.get("forecast_12m_best","")}</div></div>'
-        f'<div class="scenario-base"><div class="sc-label" style="color:#facc15;">&#9670; BASE CASE</div>'
-        f'<div class="sc-text">{d.get("forecast_12m_base","")}</div></div>'
-        f'<div class="scenario-worst"><div class="sc-label" style="color:#ef4444;">&#9660; WORST CASE</div>'
-        f'<div class="sc-text">{d.get("forecast_12m_worst","")}</div></div></div>',
-        unsafe_allow_html=True)
-
-    if d.get("additional_comments"):
-        st.markdown('<div class="slabel" style="margin-top:4px;">Additional Comments</div>',
-                    unsafe_allow_html=True)
-        html = '<div class="card">'
-        for c in d["additional_comments"]:
-            refs = "".join(
-                f'<a href="{r}" target="_blank" class="ref-link">{r}</a><br>'
-                for r in c.get("references",[])
-            )
-            html += (f'<div class="bullet-block">'
-                     f'<div class="bullet-title">&gt; {c.get("title","")}</div>'
-                     f'<div class="bullet-body">{c.get("body","")}</div>'
-                     f'{"<div style=margin-top:6px;>" + refs + "</div>" if refs else ""}'
-                     f'</div>')
-        html += "</div>"
-        st.markdown(html, unsafe_allow_html=True)
-
-    if d.get("all_references"):
-        with st.expander("All References"):
-            for r in d["all_references"]:
-                st.markdown(f'<a href="{r}" target="_blank" class="ref-link">{r}</a>',
-                            unsafe_allow_html=True)
-
-
-# ── Session state ─────────────────────────────────────────────────────────────
-for k, v in {"query_count": 0, "result_m1": None,
-             "result_m2": None, "result_m3": None, "last_params": None}.items():
+# ── Session state init ─────────────────────────────────────────────────────────
+for k, v in {"query_count": 0, "m1": None, "m_inf": None,
+              "m_supply": None, "active_ch": None,
+              "last_cat": None, "last_region": None, "periods": 6}.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-materials_list = load_materials()
-
-# ── Top bar ───────────────────────────────────────────────────────────────────
+# ── TOP BAR ───────────────────────────────────────────────────────────────────
 st.markdown(
-    f'<div class="topbar">'
-    f'<div><div class="brand-name">&#11203; CommodityPulse</div>'
-    f'<div class="brand-sub">PROCUREMENT INTELLIGENCE PLATFORM</div></div>'
-    f'<div class="date-pill">ANALYSIS DATE: {datetime.today().strftime("%d %b %Y").upper()}</div>'
-    f'</div>',
-    unsafe_allow_html=True)
+    f'<div class="topbar">' +
+    f'<div><div class="brand">&#11203; CommodityPulse</div>' +
+    f'<div class="brand-sub">PROCUREMENT INTELLIGENCE PLATFORM</div></div>' +
+    f'<div class="date-pill">ANALYSIS DATE: {datetime.today().strftime("%d %b %Y").upper()}</div>' +
+    f'</div>', unsafe_allow_html=True)
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### Analysis Parameters")
-    st.markdown("---")
-    selected_material = st.selectbox("Select L3 Category / Material", options=materials_list)
-    selected_region   = st.selectbox("Region",
-        options=["Europe","North America","Asia Pacific","Middle East & Africa","Latin America"],
-        index=0)
-    st.markdown("---")
-    st.markdown("**Select Analysis Modules**")
-    run_m2 = st.checkbox("Module 2 — Inflation Impact", value=False)
-    run_m3 = st.checkbox("Module 3 — Shortage Tracker", value=False)
-    forecast_periods = 3
-    if run_m2:
-        forecast_periods = st.select_slider("Forecast period (months)",
-                                            options=[1,2,3,4,5,6], value=3)
-    st.markdown("---")
+# ── THREE PANELS ──────────────────────────────────────────────────────────────
+col1, col2, col3 = st.columns([1.8, 3.2, 4.0])
+
+# ════════════════════════════════════════════════════════════════════════════
+# PANEL 1 — Category selector + cost head list
+# ════════════════════════════════════════════════════════════════════════════
+with col1:
+    st.markdown('<div class="panel panel-1">', unsafe_allow_html=True)
+
+    st.markdown('<div class="slabel">L3 Category</div>', unsafe_allow_html=True)
+    selected_cat = st.selectbox("cat", CATEGORIES, label_visibility="collapsed",
+                                 key="cat_select")
+
+    st.markdown('<div class="slabel" style="margin-top:10px;">Region</div>', unsafe_allow_html=True)
+    selected_region = st.selectbox("region",
+        ["Europe","North America","Asia Pacific","Middle East & Africa","Latin America"],
+        label_visibility="collapsed", key="region_select")
+
     queries_left = MAX_QUERIES - st.session_state["query_count"]
-    if queries_left > 0:
+    ql_html = f'<div style="font-size:0.65rem;color:#4b5563;font-family:DM Mono,monospace;margin:8px 0 4px;">Trial queries: <strong style="color:#f9fafb;">{queries_left}/{MAX_QUERIES}</strong></div>'
+    st.markdown(ql_html, unsafe_allow_html=True)
+
+    analyse_btn = st.button("Analyse cost heads →", use_container_width=True,
+                             disabled=(queries_left <= 0))
+
+    if st.session_state["m1"] and st.session_state["last_cat"] == selected_cat:
+        st.markdown('<div class="slabel" style="margin-top:14px;">Cost Heads — click to drill down</div>',
+                    unsafe_allow_html=True)
+        cost_heads = st.session_state["m1"].get("cost_heads", [])
+        for ch in cost_heads:
+            active = (st.session_state["active_ch"] and
+                      st.session_state["active_ch"]["name"] == ch["name"])
+            card_cls = "ch-card ch-card-active" if active else "ch-card"
+            proxy_tag = '<span class="proxy-tag">PROXY</span>' if ch.get("is_proxy") else ""
+            arrow = '<div class="ch-arrow">&#9654; viewing analysis</div>' if active else '<div class="ch-arrow">&#9654; click for analysis</div>'
+            btn_html = (
+                f'<div class="{card_cls}">' +
+                f'<div class="ch-name">{ch["name"]}</div>' +
+                f'<div class="ch-weight">{ch["weight_pct"]}%</div>' +
+                f'<div class="ch-index">{ch["best_fit_index"]}{proxy_tag}</div>' +
+                f'{arrow}</div>'
+            )
+            st.markdown(btn_html, unsafe_allow_html=True)
+            if st.button(f"Select {ch['name']}", key=f"ch_{ch['name']}",
+                         use_container_width=True):
+                st.session_state["active_ch"] = ch
+                st.session_state["m_supply"] = None
+                st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ════════════════════════════════════════════════════════════════════════════
+# PANEL 2 — Supply risk analysis
+# ════════════════════════════════════════════════════════════════════════════
+with col2:
+    st.markdown('<div class="panel panel-2">', unsafe_allow_html=True)
+
+    if st.session_state["active_ch"] and st.session_state["m1"]:
+        ch   = st.session_state["active_ch"]
+        cat  = st.session_state["last_cat"]
+        reg  = st.session_state["last_region"]
+
+        if not st.session_state["m_supply"]:
+            with st.spinner(f"Fetching supply risk data for {ch['best_fit_index']}..."):
+                try:
+                    api_key = get_api_key()
+                    st.session_state["m_supply"] = run_supply_risk(
+                        cat, ch["name"], ch["best_fit_index"], reg, api_key)
+                except Exception as e:
+                    st.error(f"Supply risk error: {e}")
+
+        d = st.session_state.get("m_supply")
+        if d:
+            st.markdown(
+                f'<div class="slabel">Supply risk analysis</div>' +
+                f'<div style="font-size:1rem;font-weight:700;color:#f9fafb;margin-bottom:3px;">{d.get("material_service", ch["best_fit_index"])}</div>' +
+                f'<div style="font-size:0.72rem;color:#6b7280;margin-bottom:12px;">{cat} &rarr; {ch["name"]} ({ch["weight_pct"]}%) &bull; {reg}</div>',
+                unsafe_allow_html=True)
+
+            # Risk scores
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(
+                    f'<div class="card-sm"><div class="slabel">Current supply risk</div>{risk_badge(d["current_supply_risk"])}</div>',
+                    unsafe_allow_html=True)
+            with c2:
+                st.markdown(
+                    f'<div class="card-sm"><div class="slabel">Forecasted supply risk</div>{risk_badge(d["forecasted_supply_risk"])}</div>',
+                    unsafe_allow_html=True)
+
+            # Variables
+            st.markdown('<div class="slabel" style="margin-top:4px;">Variables Impacting Availability</div>', unsafe_allow_html=True)
+            html = '<div class="card">'
+            for v in d.get("variables", []):
+                html += bullet_html(v.get("heading",""), v.get("analysis",""))
+            html += '</div>'
+            st.markdown(html, unsafe_allow_html=True)
+
+            # Availability forecast
+            af = d.get("availability_forecast", {})
+            st.markdown('<div class="slabel">Availability Forecast</div>', unsafe_allow_html=True)
+            html = '<div class="card">'
+            html += '<div class="slabel" style="color:#374151;margin-bottom:6px;">6-Month Outlook</div>'
+            o6 = af.get("outlook_6m", {})
+            html += bullet_html(o6.get("heading","NEXT 6 MONTHS"), o6.get("analysis",""), "#93c5fd")
+            html += '<div class="slabel" style="color:#374151;margin-top:10px;margin-bottom:6px;">12-Month Scenarios</div>'
+            bc = af.get("best_case", {})
+            html += scenario_html("scenario-best",  "#22c55e", "▲ BEST CASE",  bc.get("heading",""), bc.get("analysis",""))
+            mc = af.get("base_case", {})
+            html += scenario_html("scenario-base",  "#ca8a04", "◆ BASE CASE",  mc.get("heading",""), mc.get("analysis",""))
+            wc = af.get("worst_case", {})
+            html += scenario_html("scenario-worst", "#dc2626", "▼ WORST CASE", wc.get("heading",""), wc.get("analysis",""))
+            html += '</div>'
+            st.markdown(html, unsafe_allow_html=True)
+
+            # Additional comments
+            comments = d.get("additional_comments", [])
+            if comments:
+                st.markdown('<div class="slabel">Additional Comments</div>', unsafe_allow_html=True)
+                html = '<div class="card">'
+                for c in comments:
+                    refs_html = "".join(
+                        f'<a href="{r}" target="_blank" class="ref-link">{r}</a>'
+                        for r in c.get("references", []))
+                    html += bullet_html(c.get("heading",""), c.get("analysis",""), "#facc15")
+                    if refs_html:
+                        html += f'<div style="margin-top:4px;padding-left:14px;">{refs_html}</div>'
+                html += '</div>'
+                st.markdown(html, unsafe_allow_html=True)
+
+            # All references
+            all_refs = d.get("all_references", [])
+            if all_refs:
+                with st.expander("All references"):
+                    for r in all_refs:
+                        st.markdown(f'<a href="{r}" target="_blank" class="ref-link">{r}</a>', unsafe_allow_html=True)
+    else:
         st.markdown(
-            f'<div style="font-size:0.72rem;color:#6b7280;font-family:\'DM Mono\',monospace;">'
-            f'Trial queries remaining: <strong style="color:#f9fafb;">{queries_left} / {MAX_QUERIES}</strong></div>',
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+            'height:60vh;color:#374151;text-align:center;">' +
+            '<div style="font-size:1.8rem;margin-bottom:10px;">&#9200;</div>' +
+            '<div style="font-size:0.9rem;color:#4b5563;">Select a category and click Analyse,<br>' +
+            'then click a cost head to see<br>the supply risk analysis here.</div></div>',
+            unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ════════════════════════════════════════════════════════════════════════════
+# PANEL 3 — Weighted inflation impact chart
+# ════════════════════════════════════════════════════════════════════════════
+with col3:
+    st.markdown('<div class="panel panel-3">', unsafe_allow_html=True)
+
+    if st.session_state["m_inf"] and st.session_state["last_cat"] == selected_cat:
+        inf = st.session_state["m_inf"]
+        cat = st.session_state["last_cat"]
+        reg = st.session_state["last_region"]
+
+        st.markdown(
+            f'<div class="slabel">Weighted Cost Impact</div>' +
+            f'<div style="font-size:1rem;font-weight:700;color:#f9fafb;margin-bottom:3px;">{cat}</div>' +
+            f'<div style="font-size:0.72rem;color:#6b7280;margin-bottom:10px;">Inflation projection &bull; {reg}</div>',
+            unsafe_allow_html=True)
+
+        # Period selector
+        p_cols = st.columns(6)
+        periods_choice = st.session_state["periods"]
+        for i, n in enumerate([1,2,3,4,5,6]):
+            with p_cols[i]:
+                if st.button(f"{n}m", key=f"period_{n}", use_container_width=True):
+                    st.session_state["periods"] = n
+                    st.rerun()
+
+        periods = st.session_state["periods"]
+        fig = build_chart(inf, periods)
+        if fig:
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+        # Breakdown table
+        months = inf.get("months", [])[:periods]
+        if months:
+            all_heads = [h["name"] for h in months[0].get("cost_head_impacts", [])]
+            labels    = [m["label"] for m in months]
+
+            th_cells = "".join(f'<th style="text-align:center;padding:5px 7px;color:#4b5563;font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">{l}</th>' for l in labels)
+            header = (f'<tr><th style="text-align:left;padding:5px 7px;color:#4b5563;font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">Cost Head</th>' +
+                      f'<th style="text-align:center;padding:5px 7px;color:#4b5563;font-size:0.62rem;font-weight:600;">Wt</th>{th_cells}</tr>')
+
+            rows = ""
+            for head in all_heads:
+                cells = ""
+                wt = 0
+                for m in months:
+                    for imp in m.get("cost_head_impacts", []):
+                        if imp["name"] == head:
+                            pct = imp.get("projected_change_pct", 0)
+                            wt  = imp.get("weight_pct", 0)
+                            try: pct = float(pct)
+                            except: pct = 0.0
+                            clr = "#f97316" if pct > 0 else ("#22c55e" if pct < 0 else "#6b7280")
+                            sign = "+" if pct > 0 else ""
+                            cells += f'<td style="text-align:center;padding:5px 7px;color:{clr};font-weight:600;font-family:DM Mono,monospace;font-size:0.72rem;">{sign}{pct:.1f}%</td>'
+                            break
+                    else:
+                        cells += '<td style="text-align:center;padding:5px 7px;color:#4b5563;">—</td>'
+                rows += (f'<tr><td style="padding:5px 7px;color:#d1d5db;font-size:0.75rem;">{head}</td>' +
+                         f'<td style="text-align:center;padding:5px 7px;color:#6b7280;font-size:0.72rem;font-family:DM Mono,monospace;">{wt}%</td>{cells}</tr>')
+
+            # Totals row
+            total_cells = ""
+            for m in months:
+                t = m.get("weighted_total_pct", 0)
+                try: t = float(t)
+                except: t = 0.0
+                clr = "#f97316" if t > 0 else ("#22c55e" if t < 0 else "#facc15")
+                sign = "+" if t > 0 else ""
+                total_cells += f'<td style="text-align:center;padding:6px 7px;color:{clr};font-weight:700;font-family:DM Mono,monospace;font-size:0.74rem;">{sign}{t:.2f}%</td>'
+
+            rows += (f'<tr style="background:#0f172a;border-top:1px solid #1e3a5f;">' +
+                     f'<td style="padding:6px 7px;color:#f9fafb;font-weight:700;font-size:0.75rem;">Weighted total</td>' +
+                     f'<td style="text-align:center;padding:6px 7px;color:#6b7280;font-size:0.72rem;">100%</td>{total_cells}</tr>')
+
+            st.markdown(
+                f'<div class="card" style="overflow-x:auto;margin-top:8px;">' +
+                f'<div class="slabel" style="margin-bottom:8px;">Monthly breakdown by cost head</div>' +
+                f'<table style="width:100%;border-collapse:collapse;">' +
+                f'<thead style="border-bottom:1px solid #1e3a5f;">{header}</thead>' +
+                f'<tbody>{rows}</tbody></table></div>',
+                unsafe_allow_html=True)
+
+        if inf.get("key_assumptions"):
+            st.markdown(
+                f'<div class="card-sm" style="border-color:rgba(250,204,21,0.25);margin-top:8px;">' +
+                f'<div class="slabel">Key Assumptions</div>' +
+                f'<div style="font-size:0.75rem;color:#d1d5db;line-height:1.65;">{inf["key_assumptions"]}</div></div>',
+                unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="font-size:0.65rem;color:#374151;margin-top:6px;">' +
+            f'&#9888; Estimates based on public forward signals as of {today_str()}. Not a financial model.</div>',
             unsafe_allow_html=True)
     else:
         st.markdown(
-            '<div style="font-size:0.72rem;color:#ef4444;">Trial limit reached.</div>',
+            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+            'height:60vh;color:#374151;text-align:center;">' +
+            '<div style="font-size:1.8rem;margin-bottom:10px;">&#128200;</div>' +
+            '<div style="font-size:0.9rem;color:#4b5563;">The weighted inflation impact chart<br>' +
+            'will appear here after analysis runs.</div></div>',
             unsafe_allow_html=True)
-    analyse_btn = st.button("Run Analysis →", use_container_width=True, disabled=(queries_left <= 0))
-    st.markdown("---")
-    st.markdown(
-        '<div style="font-size:0.68rem;color:#374151;line-height:1.9;">'
-        'Module 1 always runs.<br>Module 2 uses Module 1 cost heads.<br>'
-        'Module 3 fetches live supply data.<br><br>'
-        '&#9888; AI-generated estimates only.<br>Validate before decisions.</div>',
-        unsafe_allow_html=True)
 
-# ── Run analysis ──────────────────────────────────────────────────────────────
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ── Run analysis trigger ───────────────────────────────────────────────────────
 if analyse_btn:
     api_key = get_api_key()
-    st.session_state.update({"query_count": st.session_state["query_count"] + 1,
-                              "result_m1": None, "result_m2": None, "result_m3": None,
-                              "last_params": {"material": selected_material,
-                                              "region": selected_region,
-                                              "run_m2": run_m2, "run_m3": run_m3,
-                                              "periods": forecast_periods}})
-    with st.spinner(f"Module 1 — Researching cost structure for {selected_material}..."):
+    st.session_state["query_count"] += 1
+    st.session_state.update({"m1": None, "m_inf": None, "m_supply": None,
+                              "active_ch": None,
+                              "last_cat": selected_cat, "last_region": selected_region})
+    with st.spinner(f"Analysing cost structure for {selected_cat}..."):
         try:
-            st.session_state["result_m1"] = run_module1(selected_material, selected_region, api_key)
+            st.session_state["m1"] = run_module1(selected_cat, selected_region, api_key)
         except Exception as e:
-            st.error(f"Module 1 error: {e}")
-
-    if run_m2 and st.session_state["result_m1"]:
-        with st.spinner(f"Module 2 — Projecting inflation impact over {forecast_periods} months..."):
+            st.error(f"Cost analysis error: {e}")
+    if st.session_state["m1"]:
+        cost_heads = st.session_state["m1"].get("cost_heads", [])
+        with st.spinner("Projecting inflation impact over 6 months..."):
             try:
-                st.session_state["result_m2"] = run_module2(
-                    selected_material, selected_region, forecast_periods,
-                    st.session_state["result_m1"].get("cost_heads",[]), api_key)
+                st.session_state["m_inf"] = run_inflation(
+                    selected_cat, selected_region, cost_heads, api_key)
             except Exception as e:
-                st.error(f"Module 2 error: {e}")
+                st.error(f"Inflation projection error: {e}")
+    st.rerun()
 
-    if run_m3:
-        with st.spinner("Module 3 — Fetching live supply risk data..."):
-            try:
-                st.session_state["result_m3"] = run_module3(selected_material, selected_region, api_key)
-            except Exception as e:
-                st.error(f"Module 3 error: {e}")
-
-# ── Display results ───────────────────────────────────────────────────────────
-p   = st.session_state.get("last_params") or {}
-mat = p.get("material","")
-reg = p.get("region","Europe")
-
-if st.session_state["result_m1"]:
-    st.markdown(
-        f'<div style="font-size:0.68rem;color:#6b7280;margin-bottom:4px;font-family:\'DM Mono\',monospace;">RESULTS FOR</div>'
-        f'<h2 style="margin:0 0 20px 0;">{mat} <span style="color:#3b82f6;">({reg})</span></h2>',
-        unsafe_allow_html=True)
-    cost_heads = display_module1(st.session_state["result_m1"], mat, reg)
-    if st.session_state["result_m2"]:
-        display_module2(st.session_state["result_m2"])
-    if st.session_state["result_m3"]:
-        display_module3(st.session_state["result_m3"])
-    with st.expander("Copy-paste output for Excel"):
-        m1  = st.session_state["result_m1"]
-        m3  = st.session_state["result_m3"]
-        row = "\t".join([
-            mat, reg,
-            str(m3.get("current_supply_risk","")) if m3 else "",
-            str(m3.get("forecasted_supply_risk","")) if m3 else "",
-            " | ".join(f'{c["name"]} {c["weight_pct"]}%' for c in m1.get("cost_heads",[])),
-            m1.get("freshness",{}).get("confidence_level",""),
-            today_str(), "TBC"
-        ])
-        st.code(row, language=None)
-elif not analyse_btn:
-    st.markdown(
-        '<div style="text-align:center;padding:80px 24px;color:#374151;">'
-        '<div style="font-size:2rem;margin-bottom:12px;">&#11203;</div>'
-        '<div style="font-size:1rem;color:#4b5563;">Select a material and region in the sidebar,<br>'
-        'choose your modules, and click <strong style="color:#93c5fd;">Run Analysis</strong>.</div>'
-        '</div>', unsafe_allow_html=True)
-
+# ── Footer ─────────────────────────────────────────────────────────────────────
 st.markdown(
-    '<div style="text-align:center;margin-top:3rem;padding-top:1.5rem;'
-    'border-top:1px solid #0f172a;font-size:0.68rem;color:#374151;line-height:2;">'
-    'CommodityPulse &nbsp;·&nbsp; Procurement Intelligence Platform<br>'
-    'Powered by Anthropic Claude with live web search</div>',
+    '<div class="footer">' +
+    'CommodityPulse &nbsp;·&nbsp; Procurement Intelligence Platform &nbsp;·&nbsp; ' +
+    'Powered by Anthropic Claude with live web search<br>' +
+    '<span style="color:#1e3a5f;">&#9670; Ideation &nbsp;/&nbsp; Made &nbsp;/&nbsp; Developed by <strong style="color:#374151;">Ankur Phillips</strong></span>' +
+    '</div>',
     unsafe_allow_html=True)
