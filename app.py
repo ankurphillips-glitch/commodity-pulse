@@ -915,7 +915,7 @@ st.markdown(
     'font-size:0.65rem;color:var(--t3);line-height:2.2;">'
     'CommodityPulse &nbsp;&middot;&nbsp; Procurement Intelligence Platform &nbsp;&middot;&nbsp;'
     ' Powered by Anthropic Claude with live web search<br>'
-    '<span style="color:#21262d;">&#9670; Ideation &nbsp;/&nbsp; Made &nbsp;/&nbsp; Developed by '
+    '<span style="color:#21262d;">&#9670; Made by '
     '<strong style="color:var(--t3);">Ankur Phillips</strong> &nbsp;&middot;&nbsp; '
     '<a href="tel:+919305435404" class="cp-contact">+91 9305 435 404</a></span></div>',
     unsafe_allow_html=True)
