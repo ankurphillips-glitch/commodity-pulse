@@ -1,0 +1,99 @@
+{
+  "HOME DELIVERY TRANSPORT OPERATIONS|Europe|3": {
+    "summary": {
+      "scope_note": "Analysis covers home delivery transport operations across Europe with data primarily from EU-wide indices and national toll authorities.",
+      "weighted_avg_change_pct": -1.13,
+      "direction": "down",
+      "confidence_level": "Medium",
+      "last_updated_date": "20 May 2026",
+      "primary_benchmarks": "EU Weekly Oil Bulletin, ICE Brent Crude Futures, Eurostat Labour Cost Index, CNR Toll Index, EU ETS (EUA) Futures",
+      "key_assumptions": "Assumes Iran-US negotiations progress positively, allowing Brent crude to decline toward $89/bbl by Q4 2026. Driver shortage structural pressures persist with wage increases continuing. ETS2 road freight integration postponed to January 2028, limiting near-term carbon compliance cost acceleration.",
+      "cost_heads": [
+        {"name": "Diesel/Fuel", "weight_pct": 32, "best_fit_index": "EU Weekly Oil Bulletin / ICE Brent Crude Futures", "is_proxy": false, "projected_change_pct": -10.00, "rationale": "EIA projects Brent falling from ~$106/bbl in May-June to $89/bbl in Q4 2026 as Strait of Hormuz reopens and Iran negotiations progress."},
+        {"name": "Driver Labour", "weight_pct": 35, "best_fit_index": "Eurostat Labour Cost Index – Transport Sector", "is_proxy": false, "projected_change_pct": 3.00, "rationale": "EU faces 233,000+ truck driver shortage projected to exceed 745,000 by 2028, with over half of operators responding with salary increases."},
+        {"name": "Road Tolls", "weight_pct": 12, "best_fit_index": "CNR Toll Index / National Toll Authorities", "is_proxy": false, "projected_change_pct": 4.00, "rationale": "Netherlands implements distance- and CO2-based tolling from July 2026; Poland sees 40% toll hike as Europe shifts to polluter-pays model."},
+        {"name": "Vehicle/Equipment Costs", "weight_pct": 8, "best_fit_index": "ECB Leasing Rates / OEM Price Indices", "is_proxy": false, "projected_change_pct": 1.50, "rationale": "Road Cost Index at 128.8 points driven by personnel and tolls; vehicle replacement costs stabilizing as supply chain pressures ease."},
+        {"name": "Insurance", "weight_pct": 6, "best_fit_index": "CNR Insurance Index / ATRI Operational Costs", "is_proxy": true, "projected_change_pct": 3.50, "rationale": "Finance and insurance costs rose 4.23% in Q4 2025; ATRI data show insurance at 10.2 cents/mile in 2024, up 3%, with 2025 increases accelerating."},
+        {"name": "Carbon/Environmental Compliance", "weight_pct": 7, "best_fit_index": "EU ETS (EUA) Futures / CO2 Toll Surcharges", "is_proxy": false, "projected_change_pct": 3.00, "rationale": "EU carbon allowance futures averaged EUR 74.04/t in May (+5.7% from March), projected to reach EUR 85/t in 2026; ETS2 road freight postponed to Jan 2028."}
+      ]
+    },
+    "details": {
+      "Driver Labour": {
+        "material_service": "Driver Labour",
+        "current_supply_risk": 70,
+        "forecasted_supply_risk": 70,
+        "variables": [
+          {"heading": "EUROSTAT LABOUR COST INDEX", "analysis": "The EU Labour Cost Index for Transportation and Storage reached 4.00% year-on-year in September 2025. In Q4 2025, hourly labour costs rose by 3.7% in the EU compared with the same quarter of the previous year. The non-wage component recorded a +5.4% annual increase in Q4 2025, indicating rising social contributions and employer costs beyond wages."},
+          {"heading": "DRIVER SHORTAGE CRISIS", "analysis": "Europe's truck driver shortage has surged past 426,000 unfilled positions and is projected to exceed 745,000 by 2028. One third of European truck drivers are over 55 and expected to retire within the next decade, while fewer than 5% are under 25. Women represent less than 3% of professional truck drivers, meaning young people and women combined account for less than 10% of the workforce."},
+          {"heading": "REGIONAL WAGE DISPERSION", "analysis": "CEE countries face significantly higher labour cost increases, with Poland at 16% and Lithuania at 11% year-on-year. In Q4 2025, the highest increases in hourly wage costs were recorded in Slovenia (+19.1%), Bulgaria (+13.8%), and Croatia (+10.5%). Average gross salaries for truck drivers in Europe are already 55% above the national minimum wage, reaching 133% above in the Netherlands."},
+          {"heading": "REGULATORY COMPLIANCE BURDEN", "analysis": "Germany's minimum wage increased to EUR 13.90 per hour from 1 January 2026, with a further increase to EUR 14.60 per hour planned for 2027. The German government estimates additional payroll costs of 2.2 billion euros in 2026 and 3.4 billion euros in 2027. From 1 July 2026, international freight transport by vans up to 3.5 tonnes enters the tachograph regime with mandatory G2V2 smart tachographs."},
+          {"heading": "FUEL COST ESCALATION", "analysis": "The 2026 Iran conflict and Strait of Hormuz closure triggered what the IEA characterized as the largest supply disruption in the history of the global oil market. Brent oil is forecast to average $86 a barrel in 2026, up sharply from $69 a barrel in 2025. ETS2 carbon pricing from 2027 could increase diesel costs by 10-22% at projected carbon prices of EUR 45-EUR 140 per tonne of CO2."}
+        ],
+        "availability_forecast": {
+          "outlook_period": {"heading": "THREE-MONTH HORIZON", "analysis": "The 3-month outlook period covers May-August 2026, coinciding with peak summer transport demand and the implementation of new van tachograph requirements from July 2026. Oil price volatility from the Strait of Hormuz disruption is expected to gradually normalize, with shipping projected to return to pre-war levels. Labour cost pressures will persist driven by structural driver shortages and regulatory compliance requirements."},
+          "best_case": {"heading": "GRADUAL STABILIZATION SCENARIO", "analysis": "Oil supply disruptions resolve by May 2026 with Strait of Hormuz shipping returning to pre-war levels, stabilizing fuel costs closer to the $69/barrel 2025 baseline. SDM4EU Phase 2 pilot programs successfully accelerate third-country driver recruitment, marginally easing the 426,000 driver shortage. Labour cost increases moderate to the EU-wide average of 3.7%, with inflation-adjusted wage settlements in key markets."},
+          "base_case": {"heading": "ELEVATED COST PERSISTENCE", "analysis": "Labour costs continue rising at 4-5% year-on-year in line with recent Eurostat trends, driven by chronic driver shortages and Mobility Package posted worker rules. Fuel costs remain elevated with Brent averaging $86/barrel through the outlook period. CEE markets continue experiencing double-digit wage growth (10-16%), while Western European operators face margin compression from German minimum wage increases and new Dutch tolling from July 2026."},
+          "worst_case": {"heading": "COMPOUNDED PRESSURE SCENARIO", "analysis": "Prolonged Strait of Hormuz disruption pushes Brent above $100/barrel, with diesel prices rising faster than crude due to refining constraints. Driver shortage intensifies as operators in high-wage markets (Netherlands, Germany) outbid competitors, accelerating regional wage dispersion. July 2026 van tachograph mandate triggers compliance bottlenecks and capacity constraints in last-mile delivery operations, amplifying labour cost pressures beyond the current 4% benchmark."}
+        },
+        "additional_comments": [
+          {"heading": "MOBILITY PACKAGE COMPLIANCE", "analysis": "Under EU Mobility Package rules, drivers must receive at least the minimum wage of the host country where they work, plus allowances and seniority payments. This regulation significantly increases costs for cross-border operations, particularly for Eastern European carriers operating in Western markets. The July 2026 extension of tachograph requirements to vans up to 3.5 tonnes will bring additional operators under compliance obligations, expanding labour cost pressures to the light commercial vehicle segment.", "references": ["https://trans.info/en/new-regulations-eu-447174"]},
+          {"heading": "GEOPOLITICAL SUPPLY DISRUPTION", "analysis": "The 2026 Iran conflict resulted in global oil supply falling by more than 10 million barrels per day in March, characterized by the IEA as the largest supply disruption in history. The closure of the Strait of Hormuz, through which 20% of global oil supply passes, combined with attacks on Saudi production assets, created acute fuel cost pressures. World Bank forecasts assume disruptions end in May with gradual normalization, but continued instability poses downside risk to transport operating costs.", "references": ["https://www.worldbank.org/en/news/press-release/2026/04/28/commodity-markets-outlook-april-2026-press-release"]},
+          {"heading": "RECRUITMENT PIPELINE INITIATIVES", "analysis": "The IRU's SDM4EU (Skilled Driver Mobility for Europe) project is launching Phase 2 pilot programs in 2026 to address the estimated 500,000 unfilled driver positions through third-country recruitment. Over half of European operators have responded to shortages with performance rewards or salary increases to retain existing drivers. However, with fewer than 5% of drivers under 25 and less than 3% being women, demographic constraints will limit organic workforce growth, sustaining upward wage pressure.", "references": ["https://www.iru.org/what-we-do/being-trusted-voice-mobility-and-logistics/people/driver-shortage"]}
+        ],
+        "all_references": [
+          "https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Labour_cost_index_-_recent_trends",
+          "https://www.iru.org/what-we-do/being-trusted-voice-mobility-and-logistics/people/driver-shortage",
+          "https://trans.info/en/new-regulations-eu-447174",
+          "https://www.worldbank.org/en/news/press-release/2026/04/28/commodity-markets-outlook-april-2026-press-release"
+        ]
+      }
+    }
+  },
+  "DOORS (BUILDING MATERIALS)|North America|6": {
+    "summary": {
+      "scope_note": "Analysis covers North American door manufacturing input costs across six major cost heads with data from BLS PPI, CME futures, and industry reports.",
+      "weighted_avg_change_pct": 3.85,
+      "direction": "up",
+      "confidence_level": "Medium",
+      "last_updated_date": "22 May 2026",
+      "primary_benchmarks": "CME Lumber Futures, Random Lengths Lumber Report, CRU HRC Index, CME HRC Futures, BLS PPI Flat Glass Manufacturing, BLS PPI Builders' Hardware, BLS PPI Adhesives & Sealants, BLS Employment Cost Index",
+      "key_assumptions": "Tariff policy on Canadian lumber remains near 35% effective rate through forecast period. Steel futures curve pricing holds with HRC stabilizing in mid-$800s to low-$1,100s range. Manufacturing labor cost growth continues at approximately half the annual rate over the 6-month horizon.",
+      "cost_heads": [
+        {"name": "Wood/Lumber (Softwood & Engineered)", "weight_pct": 30, "best_fit_index": "CME Lumber Futures / Random Lengths Lumber Report", "is_proxy": false, "projected_change_pct": 5.00, "rationale": "Lumber spiked 5.11% in Q2 2026 with 9 consecutive quarters of YoY growth; tight supply from reduced Canadian imports under ~35% effective tariff burden supports upward trend through year-end."},
+        {"name": "Steel (Cold-Rolled/Hot-Rolled)", "weight_pct": 22, "best_fit_index": "CRU HRC Index / CME HRC Futures", "is_proxy": false, "projected_change_pct": 4.00, "rationale": "HRC futures breached $1,100 threshold for June/July with 50% steel tariff in effect; mill indices stabilizing mid-$800s with S&P Global anticipating price recovery supported by protectionist policies."},
+        {"name": "Labor (Manufacturing)", "weight_pct": 18, "best_fit_index": "BLS Employment Cost Index / Manufacturing Wages", "is_proxy": false, "projected_change_pct": 1.85, "rationale": "Manufacturing hourly earnings crossed $30/hour threshold in April 2026 with 3.6% YoY growth; 6-month projection reflects approximately half of annual wage and benefit cost increases."},
+        {"name": "Glass (Flat Glass)", "weight_pct": 12, "best_fit_index": "BLS PPI Flat Glass Manufacturing", "is_proxy": false, "projected_change_pct": 3.75, "rationale": "Flat glass rose 0.2% in April and 6.3% YoY; energy intensity driving costs with processed energy goods prices 27.3% higher YoY in April 2026."},
+        {"name": "Hardware (Hinges, Locks, Handles)", "weight_pct": 10, "best_fit_index": "BLS PPI Builders' Hardware", "is_proxy": false, "projected_change_pct": 4.50, "rationale": "Builders' hardware prices up 8.3% YoY in April 2025; door hinges market growing at 4.9% CAGR with steel/aluminum tariffs increasing production costs."},
+        {"name": "Adhesives & Sealants", "weight_pct": 8, "best_fit_index": "BLS PPI Adhesives & Sealants", "is_proxy": false, "projected_change_pct": 3.00, "rationale": "Market growing from $85.38B to $90.45B in 2026; ongoing supply constraints in isocyanates and petrochemical feedstock volatility of up to 20% quarterly fluctuations."}
+      ]
+    },
+    "details": {
+      "Adhesives & Sealants": {
+        "material_service": "Adhesives & Sealants",
+        "current_supply_risk": 70,
+        "forecasted_supply_risk": 98,
+        "variables": [
+          {"heading": "STRAIT OF HORMUZ CRISIS INTENSIFIES", "analysis": "The ICIS Global Petrochemical Index (IPEX) surged 32.7% month-on-month in March 2026, the steepest increase since the index launched in 2000. With 60-70% of Asian naphtha passing through Hormuz, the prolonged disruption is triggering force majeure declarations across Asian petrochemical producers. Critical feedstocks including VAM, EVA, and hydrogenated hydrocarbon resins face acute supply constraints."},
+          {"heading": "ISOCYANATE SUPPLY REMAINS CONSTRAINED", "analysis": "MDI prices in April 2026 reached $3.06/kg in North America, representing a significant premium over Northeast Asia ($2.67/kg) and Europe ($2.46/kg). Global isocyanate markets faced weak demand, high operating costs, and limited visibility throughout 2025. Recovery in 2026 is expected to be slow and uneven at best."},
+          {"heading": "TARIFF VOLATILITY DISRUPTS SOURCING", "analysis": "The effective U.S. tariff rate surged from 2.5% to 27% between January and April 2025 before stabilizing at 11.8% in April 2026 following Supreme Court invalidations. Manufacturers are relocating production from China to Mexico, creating short-term supply management concerns. These trade policy shifts continue to add cost uncertainty to imported adhesive components."},
+          {"heading": "ENERGY COSTS DRIVING PETROCHEMICAL PRICES", "analysis": "The Producer Price Index for final demand increased 1.4% in April, the largest advance since March 2022. Rising energy costs and geopolitical supply chain pressures are driving up prices for solvents and petrochemical-based raw materials. These cost increases pass through the supply chain to adhesive manufacturers."},
+          {"heading": "LOGISTICS NETWORKS REMAIN CONGESTED", "analysis": "Global freight networks continue to experience congestion in key shipping routes, port capacity limitations, and uneven container availability. The Strait of Hormuz disruption has dramatically altered global resin trade flows, particularly for polyolefins. North American suppliers are positioned as beneficiaries due to competitive feedstock costs and operational stability."},
+          {"heading": "CONSTRUCTION DEMAND MODERATELY STABLE", "analysis": "Housing starts in April 2026 reached 1,465,000 units (SAAR), up 4.6% from April 2025. Single-family starts declined 9% to 0.93 million while multi-family jumped 14.3% to 0.529 million. Residential remodeling activity is expected to increase 3% in 2026, supporting adhesives demand in the doors sector."}
+        ],
+        "availability_forecast": {
+          "outlook_period": {"heading": "6-MONTH OUTLOOK (MAY-NOVEMBER 2026)", "analysis": "The adhesives and sealants market faces elevated supply risk through November 2026 as Strait of Hormuz disruptions cascade through petrochemical supply chains. The U.S. construction adhesives market is valued at $3.27 billion in 2026, growing at 5.81% CAGR. Water-borne technology dominance will continue under VOC regulations including South Coast AQMD Rule 1168."},
+          "best_case": {"heading": "HORMUZ RESOLUTION EASES FEEDSTOCK PRESSURE", "analysis": "A diplomatic resolution to the Strait of Hormuz crisis would restore 60-70% of Asian naphtha flows and normalize petrochemical feedstock availability within 60-90 days. North American suppliers would maintain competitive positioning with stable feedstock costs. Tariff rates remaining at current 11.8% levels would provide cost predictability for procurement planning."},
+          "base_case": {"heading": "PROLONGED DISRUPTION WITH REGIONAL ADAPTATION", "analysis": "Continued Hormuz disruption through H2 2026 will sustain elevated feedstock costs and intermittent supply constraints for VAM, EVA, and isocyanates. North American producers will capture market share as import alternatives face logistics and tariff headwinds. Price increases of 8-12% are anticipated across adhesive and sealant categories as producers pass through input cost inflation."},
+          "worst_case": {"heading": "SUPPLY CHAIN BREAKDOWN TRIGGERS SHORTAGES", "analysis": "Escalation of the Hormuz crisis combined with additional force majeure events could create acute shortages of critical feedstocks including MDI, TDI, and VAM. Extended disruption would push the IPEX index to new highs, potentially exceeding the 32.7% March surge. Door manufacturers may face allocation constraints and 4-8 week lead time extensions for specialty adhesive formulations."}
+        },
+        "additional_comments": [
+          {"heading": "PFAS REGULATIONS RESHAPE FORMULATIONS", "analysis": "Colorado and Maine banned PFAS-containing cleaning products effective 2026, impacting adhesives marketed for household repair. The U.S. EPA TSCA PFAS reporting deadline shifted from April 13, 2026 to 60 days following the forthcoming rule revision. Adhesive manufacturers with packaging coatings operations face additional compliance burdens from state-level bans.", "references": []},
+          {"heading": "WATER-BORNE TECHNOLOGY GAINS SHARE", "analysis": "Water-borne adhesives lead the U.S. construction market as VOC regulations tighten under South Coast AQMD Rule 1168. Ongoing supply constraints in isocyanates are encouraging producers to explore alternative and renewable feedstock options. This regulatory-driven shift creates both reformulation costs and supply diversification opportunities.", "references": []},
+          {"heading": "MEXICO SUPPLY CHAIN TRANSITION UNDERWAY", "analysis": "Manufacturers report moving production from China to Mexico in response to tariff pressures, creating short-term supply management concerns. Mexico-based production will face new tariffs on China-sourced components, adding complexity to nearshoring strategies. This supply chain reconfiguration introduces execution risk during the 6-month outlook period.", "references": []},
+          {"heading": "NORTH AMERICAN PRODUCERS GAIN ADVANTAGE", "analysis": "The Hormuz disruption has positioned North American suppliers with competitive feedstock costs and operational stability as prime beneficiaries. Prices of all volume commodity resins have moved up with projections for further increases. Regional sourcing strategies may mitigate import dependency risks but at higher baseline costs.", "references": []}
+        ],
+        "all_references": []
+      }
+    }
+  }
+}
